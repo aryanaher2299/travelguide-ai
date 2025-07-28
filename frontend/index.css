@@ -1,0 +1,134 @@
+:root {
+  --bg-main: #fbf8f7;
+  --bg-sidebar: #fbf8f7;
+  --accent-pink: #ad0339;
+  --primary-blue: #60dcf8;
+  --secondary-purple: #c8a2d5;
+  --highlight-gold: #d8bc2d;
+
+  --font-family-sans-serif: "Roboto", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-family-sans-serif);
+  background-color: var(--bg-main);
+}
+
+.main {
+  display: flex;
+  height: 100vh;
+}
+
+.left-panel {
+  width: 50%;
+  background-color: var(--bg-sidebar);
+  border-right: 2px solid var(--primary-blue);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.right-panel {
+  width: 50%;
+  background-color: var(--bg-main);
+  position: relative;
+}
+
+.search-container {
+  display: inline-flex;
+  gap: 1em;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
+.navbar {
+  background-color: var(--primary-blue) !important;
+}
+
+.navbar .navbar-brand,
+.navbar a {
+  color: white !important;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.4px;
+}
+
+input.form-control {
+  border: 1.5px solid var(--primary-blue);
+  background-color: var(--bg-main);
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  background-color: var(--primary-blue);
+  border: none;
+  font-weight: 600;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-pink);
+}
+
+.btn-outline-secondary {
+  border: 1.5px solid var(--primary-blue);
+  color: var(--primary-blue);
+  font-weight: 500;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+.btn-outline-dark {
+  border: 1.5px solid #444;
+  color: #444;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.btn-outline-dark:hover {
+  background-color: #444;
+  color: white;
+}
+
+.custom-marker {
+  width: 20px;
+  height: 20px;
+  background-color: #4285f4;
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(66, 133, 244, 0.7);
+  transform-origin: center;
+}
+
+/* AI Response Section */
+h6 {
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+  color: #333;
+}
+
+p {
+  line-height: 1.4;
+  color: #555;
+}
