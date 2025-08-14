@@ -1,0 +1,16 @@
+:root {
+  --bg-main: #00011f;
+  --bg-sidebar: #010323;
+  --accent-pink: #ffffff;
+  --primary-blue: #60dcf8;
+  --secondary-purple: #c8a2d5;
+  --highlight-gold: #d8bc2d;
+
+  --font-family-sans-serif: "Roboto", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol";
+}
+:root {
+  /* keep your existing vars… */
+  --card-bg: #0a0e2a;
+}

@@ -1,0 +1,22 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--bg-main) !important;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(96, 220, 248, 0.15);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+.navbar .navbar-brand,
+.navbar a {
+  color: var(--accent-pink) !important;
+  padding: 0.9em 1em;
+  font-weight: 600;
+  font-size: 1.06rem;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+}
+.navbar a:hover {
+  color: #9be9fb !important;
+}

@@ -3,13 +3,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import queryRoutes from "./routes/query.routes.js";
-import photoRoutes from "./routes/photo.routes.js";
+//import photoRoutes from "./routes/photo.routes.js";
 
 dotenv.config();
-
 console.log(
   "Loaded API Key:",
-  process.env.OPENAI_API_KEY ? "✅ FOUND" : "❌ MISSING"
+  process.env.GOOGLE_API_KEY ? "✅ FOUND GOOGLE API KEY" : "❌ MISSING"
 );
 
 const app = express();
@@ -19,7 +18,7 @@ app.use(express.json());
 
 // Register routes
 app.use("/query", queryRoutes);
-app.use("/photo", photoRoutes);
+//app.use("/photo", photoRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -69,20 +69,12 @@ export default function MapView() {
   }, []);
 
   return (
-    <LoadScript
-      googleMapsApiKey={(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY}
-      libraries={["marker"]}
-    >
+    <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={position}
         zoom={14}
-        options={{
-          mapId: "7a88b640cdf282b0d2a0f6f4",
-          tilt: 45, // tilt in degrees (0 disables)
-          heading: 90, // rotation in degrees (0 is default north)
-          rotateControl: true,
-        }}
+        options={{ mapId: "7a88b640cdf282b0d2a0f6f4" }}
       />
     </LoadScript>
   );

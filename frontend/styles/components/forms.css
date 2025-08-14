@@ -1,0 +1,33 @@
+input.form-control,
+select.form-control {
+  border: 1.5px solid var(--primary-blue);
+  background-color: var(--bg-main);
+  width: 75%;
+  align-items: center;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+/* Better focus ring */
+input.form-control,
+select.form-control {
+  outline: none;
+}
+input.form-control:focus,
+select.form-control:focus {
+  border-color: #9be9fb;
+  box-shadow: 0 0 0 3px rgba(96, 220, 248, 0.2);
+}
+
+/* Search bar wrapper (optional) */
+.searchbar {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  width: 100%;
+  padding: 0 1rem;
+}
+.searchbar input.form-control {
+  flex: 1;
+  width: auto;
+}

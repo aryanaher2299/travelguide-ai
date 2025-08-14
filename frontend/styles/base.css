@@ -1,0 +1,28 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-family-sans-serif);
+  background-color: var(--bg-main);
+}
+
+h6 {
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+  color: #ffffff;
+}
+p {
+  line-height: 1.4;
+  color: #ffffff;
+}
+
+/* Tighten text across dark UI */
+h5,
+h6 {
+  color: #e9f8ff;
+}
+small,
+.text-muted {
+  color: rgba(255, 255, 255, 0.65) !important;
+}

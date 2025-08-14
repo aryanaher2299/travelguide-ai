@@ -1,0 +1,179 @@
+/* Page containers */
+.pt-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pt-right {
+  padding: 0;
+}
+
+/* Reusable card */
+.pt-card {
+  background: var(--bg-sidebar);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+.pt-card-head {
+  color: var(--accent-pink);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.pt-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 8px 0 10px;
+}
+
+/* Grid for form fields */
+.pt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  margin-bottom: 10px;
+}
+.pt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pt-field label {
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+.pt-field input.form-control,
+.pt-field select.form-control {
+  width: 100%;
+}
+
+/* span two columns */
+.span-2 {
+  grid-column: span 2;
+}
+
+/* Stepper */
+.pt-stepper {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+}
+.pt-step {
+  text-align: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.6rem 0.4rem;
+}
+.pt-step span {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-sidebar);
+  border: 2px solid var(--primary-blue);
+  color: var(--primary-blue);
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+.pt-step p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #ffffff;
+}
+.pt-step.active span {
+  background: var(--primary-blue);
+  color: #001325;
+}
+.pt-step.completed span {
+  background: var(--accent-pink);
+  color: #001325;
+  border-color: var(--accent-pink);
+}
+
+/* Lists */
+.pt-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.pt-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.pt-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.pt-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.pt-item-title {
+  color: #ffffff;
+  font-weight: 700;
+}
+.pt-item-sub {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+.pt-item-desc {
+  color: #ffffff;
+  margin-top: 6px;
+}
+.pt-add-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Planner rows */
+.pt-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+/* Right panel sticky column */
+.pt-sticky {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Action row under lists */
+.pt-step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Small adjustments */
+.btn-success {
+  background-color: #2fa86e;
+  border: none;
+  font-weight: 700;
+}
+.btn-success:hover {
+  filter: brightness(1.05);
+}
+
+* {
+  color: #ffffff;
+}

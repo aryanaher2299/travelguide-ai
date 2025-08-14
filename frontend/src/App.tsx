@@ -1,17 +1,20 @@
-import MapView from "./components/MapView";
 import Navbar from "./components/Navbar";
 import SearchPanel from "./components/SearchPanel";
+import YourTrips from "./components/YourTrips";
 
 export default function App() {
   return (
     <div>
       <Navbar />
-      <div className="main d-flex">
+      <div className="main">
+        {/* Left Panel: Search */}
         <div className="left-panel">
           <SearchPanel />
         </div>
+
+        {/* Right Panel: Your Trips */}
         <div className="right-panel">
-          <MapView />
+          <YourTrips />
         </div>
       </div>
     </div>

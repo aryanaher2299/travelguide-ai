@@ -1,12 +1,26 @@
+import { Link } from "react-router-dom";
+
 export default function Navbar() {
   return (
     <nav className="navbar navbar-light bg-light px-3">
-      <span className="navbar-brand mb-0 h1">TravelGuide.ai</span>
+      <Link
+        to="/"
+        className="navbar-brand mb-0 h1"
+        style={{ textDecoration: "None" }}
+      >
+        TravelGuide.ai
+      </Link>
       <div>
-        <a href="#plan" className="me-4">
+        <Link to="/plan" className="me-4" style={{ textDecoration: "None" }}>
           Plan Your Trip
-        </a>
-        <a href="#itinerary">Itineraries</a>
+        </Link>
+        <Link
+          to="/my-itinerary"
+          className="me-4"
+          style={{ textDecoration: "None" }}
+        >
+          My Itineraries
+        </Link>
       </div>
     </nav>
   );
