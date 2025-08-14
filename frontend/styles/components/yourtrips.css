@@ -1,0 +1,117 @@
+/* Outer panel */
+.bookings-panel {
+  padding: 12px;
+}
+
+/* Panel header & divider */
+.bookings-header {
+  color: var(--accent-pink);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.bookings-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 8px 0 10px;
+}
+
+/* Scrollable list so long bookings don't stretch the page */
+.bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh; /* tweak if you want more/less */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.bookings-list::-webkit-scrollbar {
+  width: 8px;
+}
+.bookings-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+}
+
+/* Individual booking card */
+.booking-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: transform 0.12s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.booking-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 220, 248, 0.28); /* subtle glow in your palette */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Type badge */
+.booking-type {
+  align-self: start;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  white-space: nowrap;
+}
+.badge-flight {
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+.badge-hotel {
+  border-color: var(--secondary-purple);
+  color: var(--secondary-purple);
+}
+.badge-attraction {
+  border-color: var(--highlight-gold);
+  color: var(--highlight-gold);
+}
+
+/* Main text */
+.booking-title {
+  color: #fff;
+  font-weight: 700;
+}
+.booking-sub {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+/* Generic action button */
+.booking-actions .btn {
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* View button */
+.booking-actions .btn-view {
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  background: transparent;
+}
+.booking-actions .btn-view:hover {
+  background: var(--primary-blue);
+  color: #000;
+}
+
+/* Share button (disabled look but styled) */
+.booking-actions .btn-share {
+  color: rgba(255, 255, 255, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: not-allowed;
+}

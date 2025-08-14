@@ -177,3 +177,307 @@
 * {
   color: #ffffff;
 }
+
+.pt-save {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+.pt-save-label {
+  color: #fff;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Make the left column scrollable on the Plan page only */
+.left-panel.pt-left {
+  /* override the global center alignment */
+  display: block;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: calc(100vh - 72px); /* ~ navbar height buffer */
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+/* Allow the right panel to scroll if content grows */
+.right-panel.pt-right {
+  overflow-y: auto;
+  max-height: calc(100vh - 72px);
+}
+
+/* Give cards some breathing room at the bottom so the last one isn't cut */
+.pt-left .pt-card:last-child,
+.pt-right .pt-card:last-child {
+  margin-bottom: 12px;
+}
+
+/* Base button tweaks so everything feels consistent */
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Primary */
+.btn-primary {
+  background-color: var(--primary-blue);
+  border: 1px solid var(--primary-blue);
+}
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+/* Outline (dark) */
+.btn-outline-dark {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+}
+.btn-outline-dark:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Outline (secondary = blue accent) */
+.btn-outline-secondary {
+  border: 1px solid var(--primary-blue);
+  color: var(--primary-blue);
+  background: transparent;
+}
+.btn-outline-secondary:hover {
+  background: rgba(96, 220, 248, 0.15);
+}
+
+/* Success (Save) */
+.btn-success {
+  background-color: #2fa86e;
+  border: 1px solid #2fa86e;
+  color: #001b10;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.btn-success:hover {
+  filter: brightness(1.05);
+}
+
+/* Themed disabled state (kills OS gray) */
+.btn:disabled,
+.btn.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: transparent; /* no gray slab */
+  color: rgba(255, 255, 255, 0.55) !important; /* readable but muted */
+  border-color: rgba(255, 255, 255, 0.24) !important;
+}
+
+/* Save panel polish */
+.pt-save {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+.pt-save .btn {
+  border-radius: 8px;
+}
+
+/* Trip Details card polish */
+.td-card {
+  padding-bottom: 12px;
+}
+
+.td-route {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 10px;
+}
+.td-city {
+  color: #fff;
+  font-weight: 700;
+}
+.td-arrow {
+  opacity: 0.8;
+}
+
+/* Meta grid */
+.td-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.td-row {
+  display: grid;
+  grid-template-columns: 24px 90px 1fr; /* icon | label | value */
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.td-icon {
+  text-align: center;
+}
+.td-label {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+}
+.td-value {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Badges */
+.td-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.td-badge--budget {
+  border-color: var(--secondary-purple);
+  color: var(--secondary-purple);
+}
+
+/* Actions row */
+.td-actions {
+  display: flex;
+  gap: 10px;
+}
+.td-actions .btn {
+  flex: 1;
+  border-radius: 8px;
+}
+
+/* Responsive: make meta rows two columns on wide screens */
+@media (min-width: 860px) {
+  .td-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Primary Save Itinerary button */
+.btn-save-itinerary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--secondary-purple), #5bff74);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save-itinerary:hover {
+  background: linear-gradient(135deg, #9d6dff, var(--secondary-purple));
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.btn-save-itinerary:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Save panel polish */
+.pt-save {
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+.pt-save-label {
+  color: #fff;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 6px;
+}
+.pt-save-input {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: var(--bg-main);
+  color: #fff;
+}
+
+/* Actions row */
+.pt-save-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Solid Save (compact, primary) */
+.btn-save-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--secondary-purple), #5bff74);
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.btn-save-solid:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.btn-save-solid:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Ghost Cancel (subtle, on-brand) */
+.btn-cancel-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-cancel-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Optional: unify disabled look for both */
+.btn-save-solid:disabled,
+.btn-cancel-ghost:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}

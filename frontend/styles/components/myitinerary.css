@@ -97,3 +97,55 @@
   justify-content: space-between;
   margin-top: 10px;
 }
+
+/* Day/Night grid */
+.mi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.mi-day {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px;
+}
+.mi-day-head {
+  color: var(--accent-pink);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.mi-slot {
+  margin-bottom: 8px;
+}
+.mi-slot-title {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 4px;
+}
+.mi-empty {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.mi-overflow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mi-overflow-chip {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+/* reuse your earlier classes:
+   .mi-itinerary-card, .mi-itinerary-header, .mi-itinerary-body, .mi-item, .mi-item-title, .mi-item-sub, .mi-item-desc, .mi-actions
+*/

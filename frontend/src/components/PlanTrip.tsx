@@ -1,6 +1,7 @@
 import { useState } from "react";
+import axios from "axios";
 import Navbar from "../components/Navbar";
-import "../../styles/components/plantrip.css"; // <-- new styles for this page
+import "../../styles/components/plantrip.css";
 
 type ItemType = {
   id: number;
@@ -24,10 +25,56 @@ type SavedItinerary = {
   planner: ItemType[];
 };
 
+type LLMOutput = {
+  attractions?: {
+    name: string;
+    description?: string;
+    location: string;
+    importance?: string;
+    entryFees?: string;
+    operationDuration?: string;
+  }[];
+  hotels?: {
+    name: string;
+    rating?: string | number;
+    priceRange?: string;
+    location: string;
+    pros?: string;
+    cons?: string;
+  }[];
+  food?: {
+    name: string;
+    cuisineType?: string;
+    rating?: string | number;
+    priceRange?: string;
+    location: string;
+    pros?: string;
+    cons?: string;
+  }[];
+  text?: string;
+} | null;
+
+const stripAndParse = (s: string) => {
+  try {
+    const clean = s
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+    return JSON.parse(clean);
+  } catch (e) {
+    console.error("JSON parse failed:", e);
+    return null;
+  }
+};
+
 export default function PlanTrip() {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [editingTrip, setEditingTrip] = useState(false);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
+
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<0 | 1 | 2 | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [tripDetails, setTripDetails] = useState({
     destination: "",
@@ -39,6 +86,16 @@ export default function PlanTrip() {
     budget: "",
   });
 
+  // NEW state for save panel
+  const [showSave, setShowSave] = useState(false);
+  const makeSmartName = () => {
+    const d = tripDetails.destination || "Trip";
+    const days = tripDetails.days ? `${tripDetails.days}D` : "";
+    const nights = tripDetails.nights ? `${tripDetails.nights}N` : "";
+    return `${d} ${days}${nights}`.trim();
+  };
+
+  const [itineraryName, setItineraryName] = useState(makeSmartName());
   const [attractions, setAttractions] = useState<ItemType[]>([]);
   const [hotels, setHotels] = useState<ItemType[]>([]);
   const [restaurants, setRestaurants] = useState<ItemType[]>([]);
@@ -48,80 +105,204 @@ export default function PlanTrip() {
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => setTripDetails({ ...tripDetails, [e.target.name]: e.target.value });
+
+  // ---------- PROMPTS ----------
+  const attractionsPrompt = () => {
+    const { destination, origin, people, travelType, days, nights, budget } =
+      tripDetails;
+
+    return `
+You are a travel assistant. Return ONLY valid JSON with this exact shape:
+
+{
+  "attractions": [
+    { "name":"...", "description":"...", "location":"Neighborhood/Area", "importance":"must see|nice to have", "entryFees":"...", "operationDuration":"..." }
+  ]
+}
+
+Rules:
+- Provide EXACTLY 10 attractions for ${destination}.
+- Keep each description to 1–2 lines.
+- Prefer a mix of iconic sights and under‑the‑radar picks.
+- Use *local neighborhood names* in "location".
+- Consider trip context:
+  - Origin: ${origin}
+  - People: ${people}
+  - Travel Type: ${travelType || "N/A"}
+  - Duration: ${days} days / ${nights} nights
+  - Budget: ${budget || "No preference"}
+- Output ONLY JSON, no extra text.
+`;
+  };
+
+  const hotelsPrompt = (
+    selectedAttractions: { name: string; location: string }[]
   ) => {
-    setTripDetails({ ...tripDetails, [e.target.name]: e.target.value });
+    const { destination, budget } = tripDetails;
+    const anchors = selectedAttractions
+      .map((a, i) => `${i + 1}. ${a.name} (${a.location})`)
+      .join("\n");
+
+    return `
+You are a travel assistant. Return ONLY valid JSON with this exact shape:
+
+{
+  "hotels": [
+    { "name":"...", "rating":"4.5", "priceRange":"$", "location":"Area", "pros":"...", "cons":"..." }
+  ]
+}
+
+Goal:
+- Recommend hotels in/around ${destination} that minimize commute to these selected attractions:
+${anchors}
+
+Rules:
+- Prefer walkable or short‑transit distances to the above.
+- Be mindful of budget preference: ${budget || "No preference"}.
+- Include a range of price tiers but keep proximity strong.
+- Provide 10 hotel options.
+- Output ONLY JSON, no extra text.
+`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormSubmitted(true);
-    setEditingTrip(false);
+  const restaurantsPrompt = (
+    selectedAttractions: { name: string; location: string }[]
+  ) => {
+    const { destination, budget, travelType } = tripDetails;
+    const anchors = selectedAttractions
+      .map((a, i) => `${i + 1}. ${a.name} (${a.location})`)
+      .join("\n");
 
-    // Dummy Data (replace with API later)
-    setAttractions([
-      {
-        id: 1,
-        type: "Attraction",
-        name: "India Gate",
-        location: "Delhi",
-        description: "Historic landmark in the heart of the city.",
-      },
-      {
-        id: 2,
-        type: "Attraction",
-        name: "Qutub Minar",
-        location: "Delhi",
-        description: "UNESCO World Heritage Site.",
-      },
-    ]);
-    setHotels([
-      {
-        id: 3,
-        type: "Hotel",
-        name: "Taj Palace",
-        location: "Delhi",
-        description: "5-star luxury hotel with city view.",
-      },
-      {
-        id: 4,
-        type: "Hotel",
-        name: "The Oberoi",
-        location: "Delhi",
-        description: "Luxury stay with premium amenities.",
-      },
-    ]);
-    setRestaurants([
-      {
-        id: 5,
-        type: "Restaurant",
-        name: "Bukhara",
-        location: "Delhi",
-        description: "Famous for Mughlai cuisine.",
-      },
-      {
-        id: 6,
-        type: "Restaurant",
-        name: "Indian Accent",
-        location: "Delhi",
-        description: "Modern Indian fine dining.",
-      },
-    ]);
+    return `
+You are a travel assistant. Return ONLY valid JSON with this exact shape:
+
+{
+  "food": [
+    { "name":"...", "cuisineType":"...", "rating":"4.4", "priceRange":"$$", "location":"Area", "pros":"...", "cons":"..." }
+  ]
+}
+
+Goal:
+- Recommend restaurants in/around ${destination} that are close to these selected attractions:
+${anchors}
+
+Rules:
+- Blend local must‑try spots + a couple of hidden gems.
+- Consider group vibe: ${travelType || "N/A"}; budget: ${
+      budget || "No preference"
+    }.
+- Provide 10 options.
+- Output ONLY JSON, no extra text.
+`;
   };
 
-  const addToPlanner = (item: ItemType) => {
-    if (!planner.find((p) => p.id === item.id)) {
-      setPlanner([...planner, item]);
+  // ---------- API wrappers ----------
+  const postQuery = async (prompt: string) => {
+    const res = await axios.post("http://localhost:3001/query", { prompt });
+    return stripAndParse(res.data.response) as LLMOutput;
+  };
+
+  // ---------- FETCHERS ----------
+  const fetchAttractions = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await postQuery(attractionsPrompt());
+      const items =
+        (data?.attractions || []).map((x, i) => ({
+          id: Number(`1${i}`),
+          type: "Attraction" as const,
+          name: x.name,
+          location: x.location || tripDetails.destination,
+          description:
+            x.description ||
+            [x.entryFees, x.operationDuration].filter(Boolean).join(" · "),
+        })) || [];
+      setAttractions(items);
+      setFormSubmitted(true);
+      setEditingTrip(false);
+      setStep(0);
+    } catch (e) {
+      console.error(e);
+      setError("Couldn't fetch attractions. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const removeFromPlanner = (id: number) => {
-    setPlanner(planner.filter((p) => p.id !== id));
+  const ensureSelectedAnchors = () => {
+    // Use attractions already added to planner; if none, fall back to first 3 from attractions list
+    const selected = planner.filter((p) => p.type === "Attraction");
+    if (selected.length > 0)
+      return selected.map((a) => ({ name: a.name, location: a.location }));
+    return attractions
+      .slice(0, 3)
+      .map((a) => ({ name: a.name, location: a.location }));
   };
+
+  const fetchHotels = async () => {
+    setLoadingStep(1);
+    setError(null);
+    try {
+      const anchors = ensureSelectedAnchors();
+      const data = await postQuery(hotelsPrompt(anchors));
+      const items =
+        (data?.hotels || []).map((x, i) => ({
+          id: Number(`2${Date.now()}${i}`),
+          type: "Hotel" as const,
+          name: x.name,
+          location: x.location || tripDetails.destination,
+          description: [x.pros, x.cons].filter(Boolean).join(" · "),
+        })) || [];
+      setHotels(items);
+    } catch (e) {
+      console.error(e);
+      setError("Couldn't fetch hotels. Try again.");
+    } finally {
+      setLoadingStep(null);
+    }
+  };
+
+  const fetchRestaurants = async () => {
+    setLoadingStep(2);
+    setError(null);
+    try {
+      const anchors = ensureSelectedAnchors();
+      const data = await postQuery(restaurantsPrompt(anchors));
+      const items =
+        (data?.food || []).map((x, i) => ({
+          id: Number(`3${Date.now()}${i}`),
+          type: "Restaurant" as const,
+          name: x.name,
+          location: x.location || tripDetails.destination,
+          description: [x.cuisineType, x.pros, x.cons]
+            .filter(Boolean)
+            .join(" · "),
+        })) || [];
+      setRestaurants(items);
+    } catch (e) {
+      console.error(e);
+      setError("Couldn't fetch restaurants. Try again.");
+    } finally {
+      setLoadingStep(null);
+    }
+  };
+
+  // ---------- Planner ----------
+  const addToPlanner = (item: ItemType) => {
+    if (!planner.find((p) => p.id === item.id)) setPlanner((p) => [...p, item]);
+  };
+  const removeFromPlanner = (id: number) =>
+    setPlanner((p) => p.filter((x) => x.id !== id));
 
   const resetTrip = () => {
     setFormSubmitted(false);
     setPlanner([]);
     setStep(0);
+    setAttractions([]);
+    setHotels([]);
+    setRestaurants([]);
     setTripDetails({
       destination: "",
       origin: "",
@@ -134,24 +315,21 @@ export default function PlanTrip() {
   };
 
   const saveItinerary = () => {
-    const name = prompt("Enter a name for this itinerary:");
+    const name = (itineraryName || makeSmartName()).trim();
     if (!name) return;
 
-    const savedData: SavedItinerary = {
-      name,
-      tripDetails,
-      planner,
-    };
-
+    const savedData: SavedItinerary = { name, tripDetails, planner };
     const existing = JSON.parse(
       localStorage.getItem("savedItineraries") || "[]"
     );
     existing.push(savedData);
-
     localStorage.setItem("savedItineraries", JSON.stringify(existing));
-    alert("Itinerary saved successfully!");
+    setShowSave(false);
+    // Optional toast
+    alert("Saved! Check My Itineraries.");
   };
 
+  // ---------- UI ----------
   const Stepper = () => (
     <ul className="pt-stepper">
       {steps.map((label, index) => (
@@ -168,9 +346,39 @@ export default function PlanTrip() {
     </ul>
   );
 
-  const ListCard = ({ title, items }: { title: string; items: ItemType[] }) => (
+  const ListCard = ({
+    title,
+    items,
+    which,
+  }: {
+    title: string;
+    items: ItemType[];
+    which: 0 | 1 | 2;
+  }) => (
     <div className="pt-card">
-      <div className="pt-card-head">{title}</div>
+      <div
+        className="pt-card-head"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span>{title}</span>
+        <button
+          className="btn btn-outline-secondary btn-sm"
+          onClick={() =>
+            which === 0
+              ? fetchAttractions()
+              : which === 1
+              ? fetchHotels()
+              : fetchRestaurants()
+          }
+          disabled={loadingStep === which || loading}
+        >
+          {loadingStep === which || loading ? "Refreshing..." : "↻ Regenerate"}
+        </button>
+      </div>
       <div className="pt-divider" />
       <div className="pt-scroll">
         {items.map((item) => (
@@ -195,19 +403,35 @@ export default function PlanTrip() {
     </div>
   );
 
+  const handleSubmitForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchAttractions();
+  };
+
+  const handleNext = async () => {
+    if (step === 0) {
+      await fetchHotels();
+      setStep(1);
+      return;
+    }
+    if (step === 1) {
+      await fetchRestaurants();
+      setStep(2);
+      return;
+    }
+  };
+
   return (
     <div>
       <Navbar />
-
       <div className="main">
-        {/* LEFT: Form / Steps / Lists */}
+        {/* LEFT */}
         <div className="left-panel pt-left">
           {!formSubmitted || editingTrip ? (
-            <form className="w-100" onSubmit={handleSubmit}>
+            <form className="w-100" onSubmit={handleSubmitForm}>
               <div className="pt-card" style={{ marginBottom: 12 }}>
                 <div className="pt-card-head">Plan Your Trip</div>
                 <div className="pt-divider" />
-
                 <div className="pt-grid">
                   <div className="pt-field">
                     <label>Destination</label>
@@ -233,7 +457,6 @@ export default function PlanTrip() {
                       required
                     />
                   </div>
-
                   <div className="pt-field">
                     <label>People</label>
                     <input
@@ -260,7 +483,6 @@ export default function PlanTrip() {
                       <option>Solo</option>
                     </select>
                   </div>
-
                   <div className="pt-field">
                     <label>Days</label>
                     <input
@@ -285,7 +507,6 @@ export default function PlanTrip() {
                       required
                     />
                   </div>
-
                   <div className="pt-field span-2">
                     <label>Budget</label>
                     <select
@@ -301,10 +522,16 @@ export default function PlanTrip() {
                     </select>
                   </div>
                 </div>
-
-                <button type="submit" className="btn btn-primary w-100">
-                  Get Recommendations
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={loading}
+                >
+                  {loading ? "Fetching..." : "Get Attractions"}
                 </button>
+                {error && (
+                  <p style={{ marginTop: 8, color: "#ffb4b4" }}>{error}</p>
+                )}
               </div>
             </form>
           ) : (
@@ -316,20 +543,30 @@ export default function PlanTrip() {
               </div>
 
               {step === 0 && (
-                <ListCard title="Recommended Attractions" items={attractions} />
+                <ListCard
+                  title="Recommended Attractions"
+                  items={attractions}
+                  which={0}
+                />
               )}
               {step === 1 && (
-                <ListCard title="Recommended Hotels" items={hotels} />
+                <ListCard title="Closest Hotels" items={hotels} which={1} />
               )}
               {step === 2 && (
-                <ListCard title="Recommended Restaurants" items={restaurants} />
+                <ListCard
+                  title="Restaurants Near Your Plan"
+                  items={restaurants}
+                  which={2}
+                />
               )}
 
               <div className="pt-step-actions">
                 {step > 0 && (
                   <button
                     className="btn btn-outline-dark"
-                    onClick={() => setStep(step - 1)}
+                    onClick={() =>
+                      setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1)))
+                    }
                   >
                     ◀ Previous
                   </button>
@@ -337,9 +574,10 @@ export default function PlanTrip() {
                 {step < 2 && (
                   <button
                     className="btn btn-primary"
-                    onClick={() => setStep(step + 1)}
+                    onClick={handleNext}
+                    disabled={loadingStep !== null}
                   >
-                    Next ▶
+                    {step === 0 ? "Next ▶ (Hotels)" : "Next ▶ (Restaurants)"}
                   </button>
                 )}
               </div>
@@ -347,37 +585,64 @@ export default function PlanTrip() {
           )}
         </div>
 
+        {/* RIGHT */}
         {/* RIGHT: Trip summary + Planner (sticky) */}
         <div className="right-panel pt-right">
           <div className="pt-sticky">
-            <div className="pt-card">
+            <div className="pt-card td-card">
               <div className="pt-card-head">Trip Details</div>
               <div className="pt-divider" />
+
               {formSubmitted ? (
                 <>
-                  <p>
-                    🌍 <strong>{tripDetails.origin}</strong> ➡{" "}
-                    <strong>{tripDetails.destination}</strong>
-                  </p>
-                  <p>
-                    👥 {tripDetails.people} People (
-                    {tripDetails.travelType || "N/A"})
-                  </p>
-                  <p>
-                    🗓 {tripDetails.days} Days / {tripDetails.nights} Nights
-                  </p>
-                  <p>💰 {tripDetails.budget || "No preference"}</p>
+                  {/* Route pill */}
+                  <div className="td-route">
+                    <span className="td-city">{tripDetails.origin || "—"}</span>
+                    <span className="td-arrow">➡</span>
+                    <span className="td-city">
+                      {tripDetails.destination || "—"}
+                    </span>
+                  </div>
 
-                  <div className="d-flex gap-2">
+                  {/* Meta grid */}
+                  <div className="td-meta">
+                    <div className="td-row">
+                      <span className="td-icon">👥</span>
+                      <span className="td-label">People</span>
+                      <span className="td-value">
+                        {tripDetails.people} ({tripDetails.travelType || "N/A"})
+                      </span>
+                    </div>
+                    <div className="td-row">
+                      <span className="td-icon">🗓️</span>
+                      <span className="td-label">Duration</span>
+                      <span className="td-value">
+                        {tripDetails.days} Days / {tripDetails.nights} Nights
+                      </span>
+                    </div>
+                    <div className="td-row">
+                      <span className="td-icon">💰</span>
+                      <span className="td-label">Budget</span>
+                      <span className="td-value">
+                        <span className="td-badge td-badge--budget">
+                          {tripDetails.budget || "No preference"}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="td-actions">
                     <button
-                      className="btn btn-outline-secondary w-50"
+                      className="btn btn-outline-secondary"
                       onClick={() => setEditingTrip(true)}
                     >
                       ✏️ Edit
                     </button>
                     <button
-                      className="btn btn-outline-dark w-50"
+                      className="btn btn-outline-dark"
                       onClick={resetTrip}
+                      disabled={!formSubmitted}
                     >
                       🔄 Reset
                     </button>
@@ -388,15 +653,20 @@ export default function PlanTrip() {
               )}
             </div>
 
+            {/* === YOUR PLANNER (single authoritative block) === */}
             <div className="pt-card" style={{ marginTop: 12 }}>
               <div className="pt-card-head">Your Planner</div>
               <div className="pt-divider" />
-              <div className="pt-scroll">
-                {planner.length === 0 ? (
-                  <p className="text-muted">No items selected yet.</p>
-                ) : (
-                  planner.map((p) => (
-                    <div className="pt-item-row" key={p.id}>
+
+              {planner.length === 0 ? (
+                <p className="text-muted">No items selected yet.</p>
+              ) : (
+                <div className="pt-scroll">
+                  {planner.map((p, idx) => (
+                    <div
+                      className="pt-item-row"
+                      key={`${p.type}-${p.name}-${idx}`}
+                    >
                       <div>
                         <div className="pt-item-title">
                           {p.type} — {p.name}
@@ -406,21 +676,56 @@ export default function PlanTrip() {
                       <button
                         className="btn btn-outline-dark btn-sm"
                         onClick={() => removeFromPlanner(p.id)}
+                        aria-label={`Remove ${p.name}`}
                       >
                         ❌
                       </button>
                     </div>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
 
-              {planner.length > 0 && (
+              {/* Save itinerary (single place) */}
+              {planner.length > 0 && !showSave && (
                 <button
-                  className="btn btn-success w-100 mt-2"
-                  onClick={saveItinerary}
+                  className="btn-save-itinerary"
+                  onClick={() => {
+                    setItineraryName(makeSmartName());
+                    setShowSave(true);
+                  }}
                 >
                   💾 Save Itinerary
                 </button>
+              )}
+
+              {planner.length > 0 && showSave && (
+                <div className="pt-save">
+                  <label className="pt-save-label">Itinerary name</label>
+                  <input
+                    className="form-control mb-2 pt-save-input"
+                    placeholder="e.g., Delhi 3D2N"
+                    value={itineraryName}
+                    onChange={(e) => setItineraryName(e.target.value)}
+                  />
+
+                  <div className="pt-save-actions">
+                    <button
+                      className="btn-save-solid"
+                      onClick={saveItinerary}
+                      aria-label="Save itinerary"
+                    >
+                      💾 Save
+                    </button>
+
+                    <button
+                      className="btn-cancel-ghost"
+                      onClick={() => setShowSave(false)}
+                      aria-label="Cancel"
+                    >
+                      ✖ Cancel
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
