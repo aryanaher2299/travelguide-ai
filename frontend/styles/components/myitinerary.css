@@ -149,3 +149,181 @@
 /* reuse your earlier classes:
    .mi-itinerary-card, .mi-itinerary-header, .mi-itinerary-body, .mi-item, .mi-item-title, .mi-item-sub, .mi-item-desc, .mi-actions
 */
+/* LEFT: compact list with highlight */
+.itinerary-left {
+  padding: 0;
+}
+.mi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+.mi-list-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.mi-list-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.mi-list-card.active {
+  border-color: var(--primary-blue);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+.mi-list-title {
+  color: #fff;
+  font-weight: 700;
+}
+.mi-list-sub {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.85rem;
+}
+
+/* RIGHT: scrollable details */
+.itinerary-right {
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+
+/* Reuse Trip Details polish from plan page */
+.td-route {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.td-city {
+  color: #fff;
+  font-weight: 700;
+}
+.td-arrow {
+  opacity: 0.8;
+}
+
+.td-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.td-row {
+  display: grid;
+  grid-template-columns: 24px 90px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.td-icon {
+  text-align: center;
+}
+.td-label {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+}
+.td-value {
+  color: #fff;
+  font-weight: 600;
+}
+.td-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.td-badge--budget {
+  border-color: var(--secondary-purple);
+  color: var(--secondary-purple);
+}
+
+@media (min-width: 860px) {
+  .td-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Day/Night grid (already in your file; included for completeness)
+.mi-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+.mi-day { background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:10px; }
+.mi-day-head { color: var(--accent-pink); font-weight:700; margin-bottom:6px; }
+.mi-slot { margin-bottom:8px; }
+.mi-slot-title { font-size:.82rem; color: rgba(255,255,255,.75); margin-bottom:4px; }
+.mi-item { background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:8px; }
+.mi-item-title { color:#fff; font-weight:600; }
+.mi-item-sub { color: rgba(255,255,255,.7); font-size:.85rem; }
+.mi-item-desc { color:#fff; font-size:.85rem; margin-top:4px; }
+.mi-empty { font-size:.85rem; color: rgba(255,255,255,.5); border:1px dashed rgba(255,255,255,.15); padding:8px; border-radius:8px; }
+.mi-actions { display:flex; justify-content:space-between; margin-top:10px; }
+*/
+
+/* Make outline-danger fit dark theme */
+.btn-outline-danger {
+  color: #ff4d4f !important; /* your danger red */
+  border-color: #ff4d4f !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+  background-color: rgba(255, 77, 79, 0.15) !important;
+  color: #ff4d4f !important;
+  border-color: #ff4d4f !important;
+}
+
+/* Clickable empty slot */
+.mi-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    transform 0.1s ease;
+}
+.mi-empty-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Inline suggestion panel inside a slot */
+.mi-suggest-inline {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.mi-suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 6px;
+}
+.mi-suggest-actions {
+  display: flex;
+  justify-content: flex-end;
+}

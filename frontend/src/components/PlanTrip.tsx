@@ -1,7 +1,36 @@
-import { useState } from "react";
+// frontend/src/components/PlanTrip.tsx
+import { useState, useEffect } from "react";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import "../../styles/components/plantrip.css";
+
+/* ---------- Strict schema types ---------- */
+
+type Attraction = {
+  name: string;
+  description?: string;
+  location?: string;
+  importance?: "must see" | "can see if time permits";
+  entry_fees?: Record<string, string>; // flexible keys
+  operation_duration?: string;
+};
+
+type Hotel = {
+  name: string;
+  rating?: number;
+  priceRange?: string;
+  location?: string;
+  pros_and_cons?: { pros?: string[]; cons?: string[] };
+};
+
+type Restaurant = {
+  name: string;
+  cuisineType?: string;
+  rating?: number;
+  priceRange?: string;
+  location?: string;
+  pros_and_cons?: { pros?: string[]; cons?: string[] };
+};
 
 type ItemType = {
   id: number;
@@ -25,44 +54,31 @@ type SavedItinerary = {
   planner: ItemType[];
 };
 
-type LLMOutput = {
-  attractions?: {
-    name: string;
-    description?: string;
-    location: string;
-    importance?: string;
-    entryFees?: string;
-    operationDuration?: string;
-  }[];
-  hotels?: {
-    name: string;
-    rating?: string | number;
-    priceRange?: string;
-    location: string;
-    pros?: string;
-    cons?: string;
-  }[];
-  food?: {
-    name: string;
-    cuisineType?: string;
-    rating?: string | number;
-    priceRange?: string;
-    location: string;
-    pros?: string;
-    cons?: string;
-  }[];
-  text?: string;
-} | null;
+type AttractionDetails = {
+  name: string;
+  summary?: string;
+  history?: string;
+  best_time?: string;
+  time_required?: string;
+  how_to_reach?: string[];
+  tips?: string[];
+  crowd_level?: string;
+  nearby?: string[];
+  scams_warnings?: string[];
+};
 
-const stripAndParse = (s: string) => {
+/* ---------- helpers ---------- */
+
+const parseJSONEnvelope = (raw: any) => {
+  // backend returns { json: {...} } normally; fallback to { response: "text" }
+  if (raw?.json) return raw.json;
   try {
-    const clean = s
-      .replace(/```json/g, "")
+    const clean = String(raw?.response || "")
+      .replace(/```json/gi, "")
       .replace(/```/g, "")
       .trim();
     return JSON.parse(clean);
-  } catch (e) {
-    console.error("JSON parse failed:", e);
+  } catch {
     return null;
   }
 };
@@ -86,7 +102,7 @@ export default function PlanTrip() {
     budget: "",
   });
 
-  // NEW state for save panel
+  // Save itinerary panel
   const [showSave, setShowSave] = useState(false);
   const makeSmartName = () => {
     const d = tripDetails.destination || "Trip";
@@ -94,12 +110,29 @@ export default function PlanTrip() {
     const nights = tripDetails.nights ? `${tripDetails.nights}N` : "";
     return `${d} ${days}${nights}`.trim();
   };
-
   const [itineraryName, setItineraryName] = useState(makeSmartName());
-  const [attractions, setAttractions] = useState<ItemType[]>([]);
-  const [hotels, setHotels] = useState<ItemType[]>([]);
-  const [restaurants, setRestaurants] = useState<ItemType[]>([]);
+
+  // Results by step (strict schema arrays)
+  const [attractions, setAttractions] = useState<Attraction[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  // Planner
   const [planner, setPlanner] = useState<ItemType[]>([]);
+
+  // Modal (attraction “More”)
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = detailsOpen ? "hidden" : "auto";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [detailsOpen]);
+
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsData, setDetailsData] = useState<AttractionDetails | null>(
+    null
+  );
 
   const steps = ["Attractions", "Hotels", "Restaurants"];
 
@@ -107,157 +140,54 @@ export default function PlanTrip() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => setTripDetails({ ...tripDetails, [e.target.name]: e.target.value });
 
-  // ---------- PROMPTS ----------
-  const attractionsPrompt = () => {
-    const { destination, origin, people, travelType, days, nights, budget } =
-      tripDetails;
+  /* ---------- API: use kind/trip/anchors ---------- */
 
-    return `
-You are a travel assistant. Return ONLY valid JSON with this exact shape:
-
-{
-  "attractions": [
-    { "name":"...", "description":"...", "location":"Neighborhood/Area", "importance":"must see|nice to have", "entryFees":"...", "operationDuration":"..." }
-  ]
-}
-
-Rules:
-- Provide EXACTLY 10 attractions for ${destination}.
-- Keep each description to 1–2 lines.
-- Prefer a mix of iconic sights and under‑the‑radar picks.
-- Use *local neighborhood names* in "location".
-- Consider trip context:
-  - Origin: ${origin}
-  - People: ${people}
-  - Travel Type: ${travelType || "N/A"}
-  - Duration: ${days} days / ${nights} nights
-  - Budget: ${budget || "No preference"}
-- Output ONLY JSON, no extra text.
-`;
-  };
-
-  const hotelsPrompt = (
-    selectedAttractions: { name: string; location: string }[]
-  ) => {
-    const { destination, budget } = tripDetails;
-    const anchors = selectedAttractions
-      .map((a, i) => `${i + 1}. ${a.name} (${a.location})`)
-      .join("\n");
-
-    return `
-You are a travel assistant. Return ONLY valid JSON with this exact shape:
-
-{
-  "hotels": [
-    { "name":"...", "rating":"4.5", "priceRange":"$", "location":"Area", "pros":"...", "cons":"..." }
-  ]
-}
-
-Goal:
-- Recommend hotels in/around ${destination} that minimize commute to these selected attractions:
-${anchors}
-
-Rules:
-- Prefer walkable or short‑transit distances to the above.
-- Be mindful of budget preference: ${budget || "No preference"}.
-- Include a range of price tiers but keep proximity strong.
-- Provide 10 hotel options.
-- Output ONLY JSON, no extra text.
-`;
-  };
-
-  const restaurantsPrompt = (
-    selectedAttractions: { name: string; location: string }[]
-  ) => {
-    const { destination, budget, travelType } = tripDetails;
-    const anchors = selectedAttractions
-      .map((a, i) => `${i + 1}. ${a.name} (${a.location})`)
-      .join("\n");
-
-    return `
-You are a travel assistant. Return ONLY valid JSON with this exact shape:
-
-{
-  "food": [
-    { "name":"...", "cuisineType":"...", "rating":"4.4", "priceRange":"$$", "location":"Area", "pros":"...", "cons":"..." }
-  ]
-}
-
-Goal:
-- Recommend restaurants in/around ${destination} that are close to these selected attractions:
-${anchors}
-
-Rules:
-- Blend local must‑try spots + a couple of hidden gems.
-- Consider group vibe: ${travelType || "N/A"}; budget: ${
-      budget || "No preference"
-    }.
-- Provide 10 options.
-- Output ONLY JSON, no extra text.
-`;
-  };
-
-  // ---------- API wrappers ----------
-  const postQuery = async (prompt: string) => {
-    const res = await axios.post("http://localhost:3001/query", { prompt });
-    return stripAndParse(res.data.response) as LLMOutput;
-  };
-
-  // ---------- FETCHERS ----------
   const fetchAttractions = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await postQuery(attractionsPrompt());
-      const items =
-        (data?.attractions || []).map((x, i) => ({
-          id: Number(`1${i}`),
-          type: "Attraction" as const,
-          name: x.name,
-          location: x.location || tripDetails.destination,
-          description:
-            x.description ||
-            [x.entryFees, x.operationDuration].filter(Boolean).join(" · "),
-        })) || [];
-      setAttractions(items);
+      const { data } = await axios.post("http://localhost:3001/query", {
+        kind: "attractions",
+        trip: tripDetails,
+      });
+      const json = parseJSONEnvelope(data);
+      setAttractions(Array.isArray(json?.attractions) ? json.attractions : []);
       setFormSubmitted(true);
       setEditingTrip(false);
       setStep(0);
     } catch (e) {
-      console.error(e);
       setError("Couldn't fetch attractions. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const ensureSelectedAnchors = () => {
-    // Use attractions already added to planner; if none, fall back to first 3 from attractions list
+  // Attractions already added to planner → anchors; else fall back to first few results
+  const ensureSelectedAnchors = (): { name: string; location: string }[] => {
     const selected = planner.filter((p) => p.type === "Attraction");
     if (selected.length > 0)
       return selected.map((a) => ({ name: a.name, location: a.location }));
-    return attractions
-      .slice(0, 3)
-      .map((a) => ({ name: a.name, location: a.location }));
+    return attractions.slice(0, 4).map((a) => ({
+      name: a.name,
+      location: a.location || tripDetails.destination,
+    }));
   };
 
   const fetchHotels = async () => {
     setLoadingStep(1);
     setError(null);
     try {
-      const anchors = ensureSelectedAnchors();
-      const data = await postQuery(hotelsPrompt(anchors));
-      const items =
-        (data?.hotels || []).map((x, i) => ({
-          id: Number(`2${Date.now()}${i}`),
-          type: "Hotel" as const,
-          name: x.name,
-          location: x.location || tripDetails.destination,
-          description: [x.pros, x.cons].filter(Boolean).join(" · "),
-        })) || [];
-      setHotels(items);
+      const anchors = ensureSelectedAnchors().map(
+        (a, i) => `${i + 1}. ${a.name} (${a.location})`
+      );
+      const { data } = await axios.post("http://localhost:3001/query", {
+        kind: "hotels",
+        trip: tripDetails,
+        anchors,
+      });
+      const json = parseJSONEnvelope(data);
+      setHotels(Array.isArray(json?.hotels) ? json.hotels : []);
     } catch (e) {
-      console.error(e);
       setError("Couldn't fetch hotels. Try again.");
     } finally {
       setLoadingStep(null);
@@ -268,30 +198,62 @@ Rules:
     setLoadingStep(2);
     setError(null);
     try {
-      const anchors = ensureSelectedAnchors();
-      const data = await postQuery(restaurantsPrompt(anchors));
-      const items =
-        (data?.food || []).map((x, i) => ({
-          id: Number(`3${Date.now()}${i}`),
-          type: "Restaurant" as const,
-          name: x.name,
-          location: x.location || tripDetails.destination,
-          description: [x.cuisineType, x.pros, x.cons]
-            .filter(Boolean)
-            .join(" · "),
-        })) || [];
-      setRestaurants(items);
+      const anchors = ensureSelectedAnchors().map(
+        (a, i) => `${i + 1}. ${a.name} (${a.location})`
+      );
+      const { data } = await axios.post("http://localhost:3001/query", {
+        kind: "food",
+        trip: tripDetails,
+        anchors,
+      });
+      const json = parseJSONEnvelope(data);
+      setRestaurants(Array.isArray(json?.food) ? json.food : []);
     } catch (e) {
-      console.error(e);
       setError("Couldn't fetch restaurants. Try again.");
     } finally {
       setLoadingStep(null);
     }
   };
 
-  // ---------- Planner ----------
+  const openAttractionDetails = async (a: Attraction) => {
+    setDetailsOpen(true);
+    setDetailsLoading(true);
+    // show the name immediately so the header isn't blank
+    setDetailsData({ name: a.name });
+
+    try {
+      const { data } = await axios.post("http://localhost:3001/query", {
+        kind: "attraction_details",
+        trip: tripDetails,
+        attraction: {
+          name: a.name,
+          location: a.location || tripDetails.destination,
+        },
+      });
+
+      // backend returns { json: { name, summary, ... } }
+      const json = data?.json;
+      if (!json || typeof json !== "object") throw new Error("No JSON");
+      setDetailsData(json);
+    } catch (e) {
+      console.error("Details fetch error:", e);
+      setDetailsData({
+        name: a.name,
+        summary: "Sorry—couldn’t fetch details right now.",
+      });
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  /* ---------- Planner ---------- */
+
   const addToPlanner = (item: ItemType) => {
-    if (!planner.find((p) => p.id === item.id)) setPlanner((p) => [...p, item]);
+    // avoid collisions across steps: de-dupe by (type + name)
+    const exists = planner.some(
+      (p) => p.type === item.type && p.name === item.name
+    );
+    if (!exists) setPlanner((p) => [...p, item]);
   };
   const removeFromPlanner = (id: number) =>
     setPlanner((p) => p.filter((x) => x.id !== id));
@@ -325,11 +287,11 @@ Rules:
     existing.push(savedData);
     localStorage.setItem("savedItineraries", JSON.stringify(existing));
     setShowSave(false);
-    // Optional toast
     alert("Saved! Check My Itineraries.");
   };
 
-  // ---------- UI ----------
+  /* ---------- UI ---------- */
+
   const Stepper = () => (
     <ul className="pt-stepper">
       {steps.map((label, index) => (
@@ -344,63 +306,6 @@ Rules:
         </li>
       ))}
     </ul>
-  );
-
-  const ListCard = ({
-    title,
-    items,
-    which,
-  }: {
-    title: string;
-    items: ItemType[];
-    which: 0 | 1 | 2;
-  }) => (
-    <div className="pt-card">
-      <div
-        className="pt-card-head"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span>{title}</span>
-        <button
-          className="btn btn-outline-secondary btn-sm"
-          onClick={() =>
-            which === 0
-              ? fetchAttractions()
-              : which === 1
-              ? fetchHotels()
-              : fetchRestaurants()
-          }
-          disabled={loadingStep === which || loading}
-        >
-          {loadingStep === which || loading ? "Refreshing..." : "↻ Regenerate"}
-        </button>
-      </div>
-      <div className="pt-divider" />
-      <div className="pt-scroll">
-        {items.map((item) => (
-          <div className="pt-item" key={item.id}>
-            <div className="pt-item-title">{item.name}</div>
-            <div className="pt-item-sub">📍 {item.location}</div>
-            {item.description && (
-              <div className="pt-item-desc">{item.description}</div>
-            )}
-            <button
-              className="btn btn-outline-secondary pt-add-btn"
-              onClick={() => addToPlanner(item)}
-            >
-              ➕ Add to Planner
-            </button>
-          </div>
-        ))}
-        {items.length === 0 && (
-          <div className="pt-empty">No recommendations yet.</div>
-        )}
-      </div>
-    </div>
   );
 
   const handleSubmitForm = (e: React.FormEvent) => {
@@ -463,7 +368,7 @@ Rules:
                       type="number"
                       name="people"
                       className="form-control"
-                      min="1"
+                      min={1}
                       value={tripDetails.people}
                       onChange={handleChange}
                       required
@@ -489,7 +394,7 @@ Rules:
                       type="number"
                       name="days"
                       className="form-control"
-                      min="1"
+                      min={1}
                       value={tripDetails.days}
                       onChange={handleChange}
                       required
@@ -501,7 +406,7 @@ Rules:
                       type="number"
                       name="nights"
                       className="form-control"
-                      min="1"
+                      min={1}
                       value={tripDetails.nights}
                       onChange={handleChange}
                       required
@@ -542,22 +447,347 @@ Rules:
                 <Stepper />
               </div>
 
+              {/* ---------- Step 0: Attractions ---------- */}
               {step === 0 && (
-                <ListCard
-                  title="Recommended Attractions"
-                  items={attractions}
-                  which={0}
-                />
+                <div className="pt-card">
+                  <div
+                    className="pt-card-head"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span>Recommended Attractions</span>
+                    <button
+                      className="btn btn-outline-secondary btn-sm"
+                      onClick={fetchAttractions}
+                      disabled={loading || loadingStep === 0}
+                    >
+                      {loading || loadingStep === 0
+                        ? "Refreshing..."
+                        : "↻ Regenerate"}
+                    </button>
+                  </div>
+                  <div className="pt-divider" />
+                  <div className="pt-scroll">
+                    {attractions.length === 0 && (
+                      <div className="pt-empty">No recommendations yet.</div>
+                    )}
+                    {attractions.map((a, i) => (
+                      <div className="pt-result-card" key={`${a.name}-${i}`}>
+                        {/* Header */}
+                        <div className="pt-card-header-row">
+                          <div className="pt-result-title">{a.name}</div>
+                          <div className="pt-header-right">
+                            {a.importance && (
+                              <span
+                                className={`pt-chip ${
+                                  a.importance.toLowerCase() === "must see"
+                                    ? "pt-chip--important"
+                                    : "pt-chip--optional"
+                                }`}
+                                title={a.importance}
+                              >
+                                {a.importance}
+                              </span>
+                            )}
+                            <button
+                              className="pt-link-btn"
+                              onClick={() => openAttractionDetails(a)}
+                            >
+                              More
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Sub + description */}
+                        {a.location && (
+                          <div className="pt-result-sub">📍 {a.location}</div>
+                        )}
+                        {a.description && (
+                          <p className="pt-description">{a.description}</p>
+                        )}
+
+                        {/* Collapsible meta */}
+                        {(a.entry_fees || a.operation_duration) && (
+                          <details className="pt-details">
+                            <summary>Details (hours & fees)</summary>
+                            <div className="pt-entry">
+                              {a.operation_duration && (
+                                <div>
+                                  <div className="pt-entry-head">🕒 Hours</div>
+                                  <div className="pt-entry-value">
+                                    {a.operation_duration}
+                                  </div>
+                                </div>
+                              )}
+                              {a.entry_fees && (
+                                <div>
+                                  <div className="pt-entry-head">
+                                    🎟 Entry Fees
+                                  </div>
+                                  <ul className="pt-fees-list">
+                                    {Object.entries(a.entry_fees).map(
+                                      ([k, v]) => (
+                                        <li className="pt-fees-row" key={k}>
+                                          <span className="pt-fees-key">
+                                            {k}
+                                          </span>
+                                          <span className="pt-fees-val">
+                                            {v}
+                                          </span>
+                                        </li>
+                                      )
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+                        )}
+
+                        {/* Divider + footer button (keeps button visually "inside") */}
+                        <div className="pt-card-divider" />
+                        <div className="pt-card-footer">
+                          <button
+                            className="btn btn-outline-secondary pt-add-btn"
+                            onClick={() =>
+                              addToPlanner({
+                                id: Number(`1${Date.now()}${i}`),
+                                type: "Attraction",
+                                name: a.name,
+                                location: a.location || tripDetails.destination,
+                                description: a.description || "",
+                              })
+                            }
+                          >
+                            ➕ Add to Planner
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
+
+              {/* ---------- Step 1: Hotels ---------- */}
               {step === 1 && (
-                <ListCard title="Closest Hotels" items={hotels} which={1} />
+                <div className="pt-card">
+                  <div
+                    className="pt-card-head"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span>Closest Hotels</span>
+                    <button
+                      className="btn btn-outline-secondary btn-sm"
+                      onClick={fetchHotels}
+                      disabled={loadingStep === 1}
+                    >
+                      {loadingStep === 1 ? "Refreshing..." : "↻ Regenerate"}
+                    </button>
+                  </div>
+                  <div className="pt-divider" />
+                  <div className="pt-scroll">
+                    {hotels.length === 0 && (
+                      <div className="pt-empty">No recommendations yet.</div>
+                    )}
+                    {hotels.map((h, i) => (
+                      <div className="pt-result-card" key={`${h.name}-${i}`}>
+                        {/* Header row: name + badges */}
+                        <div className="pt-card-header-row">
+                          <div className="pt-result-title">{h.name}</div>
+                          <div className="pt-header-right">
+                            {typeof h.rating === "number" && (
+                              <span className="pt-badge-rating">
+                                ⭐ {h.rating}
+                              </span>
+                            )}
+                            {h.priceRange && (
+                              <span className="pt-chip pt-chip--price">
+                                {h.priceRange}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Sub line */}
+                        {h.location && (
+                          <div className="pt-result-sub">📍 {h.location}</div>
+                        )}
+
+                        {/* Pros / Cons */}
+                        {h.pros_and_cons &&
+                        (h.pros_and_cons.pros?.length ||
+                          h.pros_and_cons.cons?.length) ? (
+                          <details className="pt-details">
+                            <summary>Pros & Cons</summary>
+                            <div className="pt-proscons">
+                              {h.pros_and_cons.pros?.length ? (
+                                <div className="pt-pros">
+                                  <div className="pt-pros-head">✅ Pros</div>
+                                  <ul>
+                                    {h.pros_and_cons.pros.map((p, idx) => (
+                                      <li key={idx}>{p}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
+                              {h.pros_and_cons.cons?.length ? (
+                                <div className="pt-cons">
+                                  <div className="pt-cons-head">⚠️ Cons</div>
+                                  <ul>
+                                    {h.pros_and_cons.cons.map((c, idx) => (
+                                      <li key={idx}>{c}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
+                            </div>
+                          </details>
+                        ) : null}
+
+                        {/* Add */}
+                        <div className="pt-card-divider" />
+                        <div className="pt-card-footer">
+                          <button
+                            className="btn btn-outline-secondary pt-add-btn"
+                            onClick={() =>
+                              addToPlanner({
+                                id: Number(`2${Date.now()}${i}`),
+                                type: "Hotel",
+                                name: h.name,
+                                location: h.location || tripDetails.destination,
+                                description: [
+                                  typeof h.rating === "number"
+                                    ? `⭐ ${h.rating}`
+                                    : "",
+                                  h.priceRange || "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · "),
+                              })
+                            }
+                          >
+                            ➕ Add to Planner
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
+
+              {/* ---------- Step 2: Restaurants ---------- */}
               {step === 2 && (
-                <ListCard
-                  title="Restaurants Near Your Plan"
-                  items={restaurants}
-                  which={2}
-                />
+                <div className="pt-card">
+                  <div
+                    className="pt-card-head"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span>Restaurants Near Your Plan</span>
+                    <button
+                      className="btn btn-outline-secondary btn-sm"
+                      onClick={fetchRestaurants}
+                      disabled={loadingStep === 2}
+                    >
+                      {loadingStep === 2 ? "Refreshing..." : "↻ Regenerate"}
+                    </button>
+                  </div>
+                  <div className="pt-divider" />
+                  <div className="pt-scroll">
+                    {restaurants.length === 0 && (
+                      <div className="pt-empty">No recommendations yet.</div>
+                    )}
+                    {restaurants.map((r, i) => (
+                      <div className="pt-result-card" key={`${r.name}-${i}`}>
+                        {/* Header row */}
+                        <div className="pt-card-header-row">
+                          <div className="pt-result-title">{r.name}</div>
+                          <div className="pt-header-right">
+                            {typeof r.rating === "number" && (
+                              <span className="pt-badge-rating">
+                                ⭐ {r.rating}
+                              </span>
+                            )}
+                            {r.priceRange && (
+                              <span className="pt-chip pt-chip--price">
+                                {r.priceRange}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Sub lines */}
+                        <div className="pt-result-sub">
+                          {r.cuisineType ? `${r.cuisineType}` : ""}
+                          {r.cuisineType && r.location ? " · " : ""}
+                          {r.location ? `📍 ${r.location}` : ""}
+                        </div>
+
+                        {/* Pros / Cons */}
+                        {r.pros_and_cons &&
+                        (r.pros_and_cons.pros?.length ||
+                          r.pros_and_cons.cons?.length) ? (
+                          <details className="pt-details">
+                            <summary>Pros & Cons</summary>
+                            <div className="pt-proscons">
+                              {r.pros_and_cons.pros?.length ? (
+                                <div className="pt-pros">
+                                  <div className="pt-pros-head">✅ Pros</div>
+                                  <ul>
+                                    {r.pros_and_cons.pros.map((p, idx) => (
+                                      <li key={idx}>{p}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
+                              {r.pros_and_cons.cons?.length ? (
+                                <div className="pt-cons">
+                                  <div className="pt-cons-head">⚠️ Cons</div>
+                                  <ul>
+                                    {r.pros_and_cons.cons.map((c, idx) => (
+                                      <li key={idx}>{c}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
+                            </div>
+                          </details>
+                        ) : null}
+
+                        {/* Add */}
+                        <div className="pt-card-divider" />
+                        <div className="pt-card-footer">
+                          <button
+                            className="btn btn-outline-secondary pt-add-btn"
+                            onClick={() =>
+                              addToPlanner({
+                                id: Number(`3${Date.now()}${i}`),
+                                type: "Restaurant",
+                                name: r.name,
+                                location: r.location || tripDetails.destination,
+                                description: [r.cuisineType, r.priceRange]
+                                  .filter(Boolean)
+                                  .join(" · "),
+                              })
+                            }
+                          >
+                            ➕ Add to Planner
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               <div className="pt-step-actions">
@@ -585,8 +815,7 @@ Rules:
           )}
         </div>
 
-        {/* RIGHT */}
-        {/* RIGHT: Trip summary + Planner (sticky) */}
+        {/* RIGHT: Trip summary + Planner */}
         <div className="right-panel pt-right">
           <div className="pt-sticky">
             <div className="pt-card td-card">
@@ -595,7 +824,6 @@ Rules:
 
               {formSubmitted ? (
                 <>
-                  {/* Route pill */}
                   <div className="td-route">
                     <span className="td-city">{tripDetails.origin || "—"}</span>
                     <span className="td-arrow">➡</span>
@@ -604,7 +832,6 @@ Rules:
                     </span>
                   </div>
 
-                  {/* Meta grid */}
                   <div className="td-meta">
                     <div className="td-row">
                       <span className="td-icon">👥</span>
@@ -631,7 +858,6 @@ Rules:
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="td-actions">
                     <button
                       className="btn btn-outline-secondary"
@@ -653,7 +879,7 @@ Rules:
               )}
             </div>
 
-            {/* === YOUR PLANNER (single authoritative block) === */}
+            {/* Planner */}
             <div className="pt-card" style={{ marginTop: 12 }}>
               <div className="pt-card-head">Your Planner</div>
               <div className="pt-divider" />
@@ -685,7 +911,7 @@ Rules:
                 </div>
               )}
 
-              {/* Save itinerary (single place) */}
+              {/* Save itinerary */}
               {planner.length > 0 && !showSave && (
                 <button
                   className="btn-save-itinerary"
@@ -731,6 +957,114 @@ Rules:
           </div>
         </div>
       </div>
+
+      {/* ----------- Attraction Details Modal ----------- */}
+      {detailsOpen && (
+        <div className="pt-modal" role="dialog" aria-modal="true">
+          <div
+            className="pt-modal-backdrop"
+            onClick={() => setDetailsOpen(false)}
+          />
+          <div className="pt-modal-card" role="document">
+            <div className="pt-modal-head">
+              <div className="pt-modal-title">
+                {detailsData?.name || "Attraction details"}
+              </div>
+              <button
+                className="pt-close"
+                onClick={() => setDetailsOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="pt-modal-body">
+              {detailsLoading ? (
+                <div className="pt-modal-loading">Loading…</div>
+              ) : detailsData ? (
+                <>
+                  {detailsData.summary && (
+                    <p className="pt-modal-p">{detailsData.summary}</p>
+                  )}
+
+                  <div className="pt-modal-grid">
+                    {detailsData.best_time && (
+                      <div>
+                        <div className="pt-modal-k">Best time</div>
+                        <div className="pt-modal-v">
+                          {detailsData.best_time}
+                        </div>
+                      </div>
+                    )}
+                    {detailsData.time_required && (
+                      <div>
+                        <div className="pt-modal-k">Time required</div>
+                        <div className="pt-modal-v">
+                          {detailsData.time_required}
+                        </div>
+                      </div>
+                    )}
+                    {detailsData.crowd_level && (
+                      <div>
+                        <div className="pt-modal-k">Crowd</div>
+                        <div className="pt-modal-v">
+                          {detailsData.crowd_level}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {detailsData.how_to_reach?.length ? (
+                    <div className="pt-modal-section">
+                      <div className="pt-modal-k">How to reach</div>
+                      <ul className="pt-modal-list">
+                        {detailsData.how_to_reach.map((t, idx) => (
+                          <li key={idx}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {detailsData.tips?.length ? (
+                    <div className="pt-modal-section">
+                      <div className="pt-modal-k">Tips</div>
+                      <ul className="pt-modal-list">
+                        {detailsData.tips.map((t, idx) => (
+                          <li key={idx}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {detailsData.nearby?.length ? (
+                    <div className="pt-modal-section">
+                      <div className="pt-modal-k">Nearby</div>
+                      <ul className="pt-modal-list">
+                        {detailsData.nearby.map((n, idx) => (
+                          <li key={idx}>{n}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {detailsData.scams_warnings?.length ? (
+                    <div className="pt-modal-section">
+                      <div className="pt-modal-k">Warnings</div>
+                      <ul className="pt-modal-list">
+                        {detailsData.scams_warnings.map((s, idx) => (
+                          <li key={idx}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="pt-modal-empty">No details available.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

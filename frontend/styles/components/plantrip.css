@@ -1,4 +1,4 @@
-/* Page containers */
+/* ========= Layout (PlanTrip) ========= */
 .pt-left {
   display: flex;
   flex-direction: column;
@@ -8,7 +8,18 @@
   padding: 0;
 }
 
-/* Reusable card */
+.left-panel.pt-left {
+  display: block;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: calc(100vh - 72px);
+}
+.right-panel.pt-right {
+  overflow-y: auto;
+  max-height: calc(100vh - 72px);
+}
+
+/* ========= Card ========= */
 .pt-card {
   background: var(--bg-sidebar);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -27,7 +38,7 @@
   margin: 8px 0 10px;
 }
 
-/* Grid for form fields */
+/* ========= Form Grid ========= */
 .pt-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -40,20 +51,18 @@
   gap: 6px;
 }
 .pt-field label {
-  color: #ffffff;
+  color: #fff;
   font-size: 0.85rem;
 }
 .pt-field input.form-control,
 .pt-field select.form-control {
   width: 100%;
 }
-
-/* span two columns */
 .span-2 {
   grid-column: span 2;
 }
 
-/* Stepper */
+/* ========= Stepper ========= */
 .pt-stepper {
   list-style: none;
   display: grid;
@@ -64,7 +73,6 @@
 }
 .pt-step {
   text-align: center;
-  position: relative;
   background: rgba(255, 255, 255, 0.03);
   border: 1px dashed rgba(255, 255, 255, 0.08);
   border-radius: 10px;
@@ -85,7 +93,7 @@
 .pt-step p {
   margin: 0;
   font-size: 0.82rem;
-  color: #ffffff;
+  color: #fff;
 }
 .pt-step.active span {
   background: var(--primary-blue);
@@ -97,10 +105,11 @@
   border-color: var(--accent-pink);
 }
 
-/* Lists */
+/* ========= Scroll lists ========= */
 .pt-scroll {
-  max-height: 320px;
-  overflow-y: auto;
+  max-height: calc(72vh - 120px);
+  overflow: auto;
+  padding-right: 6px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
@@ -111,32 +120,163 @@
   background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
 }
+.pt-empty {
+  color: rgba(255, 255, 255, 0.75);
+  padding: 8px 0;
+}
 
-.pt-item {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+/* ========= Result cards (Attractions / Hotels / Restaurants) ========= */
+.pt-result-card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.pt-card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pt-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pt-result-title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+.pt-result-sub {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+.pt-description {
+  margin: 8px 0 4px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.42;
+}
+
+.pt-chip {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.pt-chip--important {
+  background: rgba(255, 99, 99, 0.18);
+  color: #ff6b6b;
+  border-color: rgba(255, 99, 99, 0.35);
+}
+.pt-chip--optional {
+  background: rgba(255, 215, 0, 0.14);
+  color: #ffd700;
+  border-color: rgba(255, 215, 0, 0.32);
+}
+.pt-badge-rating {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.82rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.pt-chip--price {
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  background: rgba(96, 220, 248, 0.1);
+}
+
+.pt-details {
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 10px;
+  overflow: hidden;
 }
-.pt-item-title {
-  color: #ffffff;
+.pt-details > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 12px;
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+}
+.pt-details[open] > summary {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pt-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pt-entry {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 10px 12px 12px;
+}
+@media (max-width: 820px) {
+  .pt-entry {
+    grid-template-columns: 1fr;
+  }
+}
+.pt-entry-head {
   font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
 }
-.pt-item-sub {
-  color: rgba(255, 255, 255, 0.7);
+.pt-entry-value {
+  color: #fff;
+}
+
+.pt-fees-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.pt-fees-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+.pt-fees-key {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.86rem;
+}
+.pt-fees-val {
+  color: #fff;
   font-size: 0.9rem;
 }
-.pt-item-desc {
-  color: #ffffff;
-  margin-top: 6px;
+
+.pt-card-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 12px -14px 10px;
+}
+.pt-card-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 .pt-add-btn {
   width: 100%;
-  margin-top: 8px;
 }
 
-/* Planner rows */
+/* ========= Planner (right column) ========= */
+.pt-sticky {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+}
 .pt-item-row {
   display: flex;
   justify-content: space-between;
@@ -148,147 +288,10 @@
   margin-bottom: 8px;
 }
 
-/* Right panel sticky column */
-.pt-sticky {
-  position: sticky;
-  top: 12px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Action row under lists */
-.pt-step-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-/* Small adjustments */
-.btn-success {
-  background-color: #2fa86e;
-  border: none;
-  font-weight: 700;
-}
-.btn-success:hover {
-  filter: brightness(1.05);
-}
-
-* {
-  color: #ffffff;
-}
-
-.pt-save {
-  margin-top: 10px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-}
-.pt-save-label {
-  color: #fff;
-  font-size: 0.85rem;
-  margin-bottom: 6px;
-  display: block;
-}
-
-/* Make the left column scrollable on the Plan page only */
-.left-panel.pt-left {
-  /* override the global center alignment */
-  display: block;
-  padding: 12px;
-  overflow-y: auto;
-  max-height: calc(100vh - 72px); /* ~ navbar height buffer */
-  align-items: stretch;
-  justify-content: flex-start;
-}
-
-/* Allow the right panel to scroll if content grows */
-.right-panel.pt-right {
-  overflow-y: auto;
-  max-height: calc(100vh - 72px);
-}
-
-/* Give cards some breathing room at the bottom so the last one isn't cut */
-.pt-left .pt-card:last-child,
-.pt-right .pt-card:last-child {
-  margin-bottom: 12px;
-}
-
-/* Base button tweaks so everything feels consistent */
-.btn {
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-/* Primary */
-.btn-primary {
-  background-color: var(--primary-blue);
-  border: 1px solid var(--primary-blue);
-}
-.btn-primary:hover {
-  filter: brightness(1.05);
-}
-
-/* Outline (dark) */
-.btn-outline-dark {
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: rgba(255, 255, 255, 0.9);
-  background: transparent;
-}
-.btn-outline-dark:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Outline (secondary = blue accent) */
-.btn-outline-secondary {
-  border: 1px solid var(--primary-blue);
-  color: var(--primary-blue);
-  background: transparent;
-}
-.btn-outline-secondary:hover {
-  background: rgba(96, 220, 248, 0.15);
-}
-
-/* Success (Save) */
-.btn-success {
-  background-color: #2fa86e;
-  border: 1px solid #2fa86e;
-  color: #001b10;
-  border-radius: 8px;
-  font-weight: 600;
-}
-.btn-success:hover {
-  filter: brightness(1.05);
-}
-
-/* Themed disabled state (kills OS gray) */
-.btn:disabled,
-.btn.is-disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: transparent; /* no gray slab */
-  color: rgba(255, 255, 255, 0.55) !important; /* readable but muted */
-  border-color: rgba(255, 255, 255, 0.24) !important;
-}
-
-/* Save panel polish */
-.pt-save {
-  margin-top: 10px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-}
-.pt-save .btn {
-  border-radius: 8px;
-}
-
-/* Trip Details card polish */
+/* ========= Trip Details ========= */
 .td-card {
   padding-bottom: 12px;
 }
-
 .td-route {
   display: inline-flex;
   align-items: center;
@@ -307,16 +310,20 @@
   opacity: 0.8;
 }
 
-/* Meta grid */
 .td-meta {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
   margin-bottom: 10px;
 }
+@media (min-width: 860px) {
+  .td-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 .td-row {
   display: grid;
-  grid-template-columns: 24px 90px 1fr; /* icon | label | value */
+  grid-template-columns: 24px 90px 1fr;
   align-items: center;
   gap: 8px;
   padding: 8px;
@@ -335,8 +342,6 @@
   color: #fff;
   font-weight: 600;
 }
-
-/* Badges */
 .td-badge {
   display: inline-block;
   padding: 0.2rem 0.5rem;
@@ -350,8 +355,6 @@
   border-color: var(--secondary-purple);
   color: var(--secondary-purple);
 }
-
-/* Actions row */
 .td-actions {
   display: flex;
   gap: 10px;
@@ -361,43 +364,35 @@
   border-radius: 8px;
 }
 
-/* Responsive: make meta rows two columns on wide screens */
-@media (min-width: 860px) {
-  .td-meta {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* Primary Save Itinerary button */
-.btn-save-itinerary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 18px;
-  background: linear-gradient(135deg, var(--secondary-purple), #5bff74);
-  color: #fff;
-  font-weight: 700;
-  font-size: 1rem;
-  border: none;
+/* ========= Save itinerary panel/buttons ========= */
+.btn {
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  font-weight: 600;
+}
+.btn-primary {
+  background: var(--primary-blue);
+  border: 1px solid var(--primary-blue);
+}
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+.btn-outline-dark {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+}
+.btn-outline-dark:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.btn-outline-secondary {
+  border: 1px solid var(--primary-blue);
+  color: var(--primary-blue);
+  background: transparent;
+}
+.btn-outline-secondary:hover {
+  background: rgba(96, 220, 248, 0.15);
 }
 
-.btn-save-itinerary:hover {
-  background: linear-gradient(135deg, #9d6dff, var(--secondary-purple));
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-}
-
-.btn-save-itinerary:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
-}
-
-/* Save panel polish */
 .pt-save {
   margin-top: 10px;
   padding: 12px;
@@ -417,8 +412,6 @@
   background: var(--bg-main);
   color: #fff;
 }
-
-/* Actions row */
 .pt-save-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -426,7 +419,26 @@
   margin-top: 8px;
 }
 
-/* Solid Save (compact, primary) */
+.btn-save-itinerary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--secondary-purple), #5bff74);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-save-itinerary:hover {
+  background: linear-gradient(135deg, #9d6dff, var(--secondary-purple));
+  transform: translateY(-1px);
+}
 .btn-save-solid {
   display: inline-flex;
   align-items: center;
@@ -440,19 +452,7 @@
   border: none;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
-.btn-save-solid:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-.btn-save-solid:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
-}
-
-/* Ghost Cancel (subtle, on-brand) */
 .btn-cancel-ghost {
   display: inline-flex;
   align-items: center;
@@ -465,19 +465,139 @@
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
 }
-.btn-cancel-ghost:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.35);
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-/* Optional: unify disabled look for both */
-.btn-save-solid:disabled,
-.btn-cancel-ghost:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  filter: none;
-  transform: none;
+/* ========= Actions under list ========= */
+.pt-step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ========= “More” link on attraction card ========= */
+.pt-link-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.82rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pt-link-btn:hover {
+  border-color: var(--primary-blue);
+  color: #fff;
+}
+
+/* ========= Modal (light sky-blue) ========= */
+.pt-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+}
+.pt-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+.pt-modal-card {
+  position: relative;
+  max-width: 820px;
+  max-height: 80vh;
+  margin: 8vh auto 0;
+  padding: 16px 16px 8px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 11, 66, 0.97),
+    rgba(200, 230, 250, 0.95)
+  );
+  border: 1px solid;
+  border-radius: 16px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  color: #0a2c4f;
+}
+.pt-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 6px 8px;
+}
+.pt-modal-title {
+  font-weight: 700;
+  color: #ffffff;
+}
+.pt-close {
+  border: 1px solid rgba(135, 206, 235, 0.5);
+  background: rgba(255, 255, 255, 0.25);
+  color: #000000;
+  border-radius: 10px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.pt-modal-body {
+  overflow: auto;
+  padding: 6px 6px 12px;
+  max-height: calc(80vh - 54px);
+}
+.pt-modal-p {
+  color: #ffffff;
+  line-height: 1.45;
+  margin: 0 0 12px 0;
+}
+
+.pt-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 8px 0;
+}
+@media (max-width: 800px) {
+  .pt-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pt-modal-k {
+  font-weight: 600;
+  color: #ffffff;
+}
+.pt-modal-v {
+  color: #ffffff;
+}
+.pt-modal-section {
+  margin-top: 10px;
+}
+.pt-modal-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.pt-modal-list li {
+  color: #ffffff;
+}
+.pt-modal-empty,
+.pt-modal-loading {
+  color: #ffffff;
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* Modal scrollbar (webkit) */
+.pt-modal-body::-webkit-scrollbar {
+  width: 10px;
+}
+.pt-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(135, 206, 235, 0.6);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
