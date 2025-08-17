@@ -1,17 +1,15 @@
-// frontend/src/components/PlanTrip.tsx
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import "../../styles/components/plantrip.css";
 
 /* ---------- Strict schema types ---------- */
-
 type Attraction = {
   name: string;
   description?: string;
   location?: string;
   importance?: "must see" | "can see if time permits";
-  entry_fees?: Record<string, string>; // flexible keys
+  entry_fees?: Record<string, string>;
   operation_duration?: string;
 };
 
@@ -19,6 +17,7 @@ type Hotel = {
   name: string;
   rating?: number;
   priceRange?: string;
+  approx_cost_per_night?: string;
   location?: string;
   pros_and_cons?: { pros?: string[]; cons?: string[] };
 };
@@ -28,6 +27,7 @@ type Restaurant = {
   cuisineType?: string;
   rating?: number;
   priceRange?: string;
+  approx_cost_for_two?: string;
   location?: string;
   pros_and_cons?: { pros?: string[]; cons?: string[] };
 };
@@ -50,6 +50,7 @@ type SavedItinerary = {
     days: number;
     nights: number;
     budget: string;
+    dates?: string;
   };
   planner: ItemType[];
 };
@@ -68,21 +69,11 @@ type AttractionDetails = {
 };
 
 /* ---------- helpers ---------- */
+const parseJSONEnvelope = (raw: any) => (raw?.json ? raw.json : null);
 
-const parseJSONEnvelope = (raw: any) => {
-  // backend returns { json: {...} } normally; fallback to { response: "text" }
-  if (raw?.json) return raw.json;
-  try {
-    const clean = String(raw?.response || "")
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
-    return JSON.parse(clean);
-  } catch {
-    return null;
-  }
-};
+const API = "http://localhost:3001";
 
+/* ---------- Component ---------- */
 export default function PlanTrip() {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [editingTrip, setEditingTrip] = useState(false);
@@ -100,27 +91,33 @@ export default function PlanTrip() {
     days: 0,
     nights: 0,
     budget: "",
+    dates: "",
   });
 
   // Save itinerary panel
   const [showSave, setShowSave] = useState(false);
   const makeSmartName = () => {
     const d = tripDetails.destination || "Trip";
-    const days = tripDetails.days ? `${tripDetails.days}D` : "";
-    const nights = tripDetails.nights ? `${tripDetails.nights}N` : "";
-    return `${d} ${days}${nights}`.trim();
+    const tag =
+      tripDetails.days && tripDetails.nights
+        ? ` ${tripDetails.days}D${tripDetails.nights}N`
+        : "";
+    return `${d}${tag}`.trim();
   };
   const [itineraryName, setItineraryName] = useState(makeSmartName());
 
-  // Results by step (strict schema arrays)
+  // Results by step
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  // Planner
   const [planner, setPlanner] = useState<ItemType[]>([]);
 
   // Modal (attraction “More”)
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsData, setDetailsData] = useState<AttractionDetails | null>(
+    null
+  );
 
   useEffect(() => {
     document.body.style.overflow = detailsOpen ? "hidden" : "auto";
@@ -129,24 +126,18 @@ export default function PlanTrip() {
     };
   }, [detailsOpen]);
 
-  const [detailsLoading, setDetailsLoading] = useState(false);
-  const [detailsData, setDetailsData] = useState<AttractionDetails | null>(
-    null
-  );
-
   const steps = ["Attractions", "Hotels", "Restaurants"];
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => setTripDetails({ ...tripDetails, [e.target.name]: e.target.value });
 
-  /* ---------- API: use kind/trip/anchors ---------- */
-
+  /* ---------- API ---------- */
   const fetchAttractions = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.post("http://localhost:3001/query", {
+      const { data } = await axios.post(`${API}/query`, {
         kind: "attractions",
         trip: tripDetails,
       });
@@ -155,15 +146,16 @@ export default function PlanTrip() {
       setFormSubmitted(true);
       setEditingTrip(false);
       setStep(0);
-    } catch (e) {
-      setError("Couldn't fetch attractions. Try again.");
+    } catch (e: any) {
+      setError(
+        e?.response?.data?.error || "Couldn't fetch attractions. Try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Attractions already added to planner → anchors; else fall back to first few results
-  const ensureSelectedAnchors = (): { name: string; location: string }[] => {
+  const selectedAnchors = (): { name: string; location: string }[] => {
     const selected = planner.filter((p) => p.type === "Attraction");
     if (selected.length > 0)
       return selected.map((a) => ({ name: a.name, location: a.location }));
@@ -177,18 +169,43 @@ export default function PlanTrip() {
     setLoadingStep(1);
     setError(null);
     try {
-      const anchors = ensureSelectedAnchors().map(
+      const anchors = selectedAnchors().map(
         (a, i) => `${i + 1}. ${a.name} (${a.location})`
       );
-      const { data } = await axios.post("http://localhost:3001/query", {
+      const { data } = await axios.post(`${API}/query`, {
         kind: "hotels",
         trip: tripDetails,
         anchors,
       });
       const json = parseJSONEnvelope(data);
-      setHotels(Array.isArray(json?.hotels) ? json.hotels : []);
-    } catch (e) {
-      setError("Couldn't fetch hotels. Try again.");
+      let list = Array.isArray(json?.hotels) ? json.hotels : [];
+
+      // Budget filter (soft) if user specified
+      if (tripDetails.budget) {
+        const b = tripDetails.budget;
+        list = list.filter((h) => {
+          const str = `${h.priceRange || ""} ${
+            h.approx_cost_per_night || ""
+          }`.toLowerCase();
+          if (b === "Budget Friendly")
+            return (
+              /₹\s?\d{1,2},?\d{3}/.test(str) ||
+              str.includes("$") ||
+              str.includes("budget")
+            );
+          if (b === "Mid-range")
+            return (
+              str.includes("mid") ||
+              /₹\s?\d{2},?\d{3}\s?–?\s?₹?\s?\d{2},?\d{3}/.test(str)
+            );
+          if (b === "Luxury")
+            return str.includes("lux") || /₹\s?\d{2,3},?\d{3}\+?/.test(str);
+          return true;
+        });
+      }
+      setHotels(list);
+    } catch (e: any) {
+      setError(e?.response?.data?.error || "Couldn't fetch hotels. Try again.");
     } finally {
       setLoadingStep(null);
     }
@@ -198,18 +215,39 @@ export default function PlanTrip() {
     setLoadingStep(2);
     setError(null);
     try {
-      const anchors = ensureSelectedAnchors().map(
+      const anchors = selectedAnchors().map(
         (a, i) => `${i + 1}. ${a.name} (${a.location})`
       );
-      const { data } = await axios.post("http://localhost:3001/query", {
+      const { data } = await axios.post(`${API}/query`, {
         kind: "food",
         trip: tripDetails,
         anchors,
       });
       const json = parseJSONEnvelope(data);
-      setRestaurants(Array.isArray(json?.food) ? json.food : []);
-    } catch (e) {
-      setError("Couldn't fetch restaurants. Try again.");
+      let list = Array.isArray(json?.food) ? json.food : [];
+
+      // Budget filter (soft)
+      if (tripDetails.budget) {
+        const b = tripDetails.budget;
+        list = list.filter((r) => {
+          const str = `${r.priceRange || ""} ${
+            r.approx_cost_for_two || ""
+          }`.toLowerCase();
+          if (b === "Budget Friendly")
+            return str.includes("₹")
+              ? !str.match(/₹\s?\d{2},?\d{3}/)
+              : str.includes("$") || str.includes("budget");
+          if (b === "Mid-range")
+            return str.includes("mid") || str.includes("$$");
+          if (b === "Luxury") return str.includes("lux") || str.includes("$$$");
+          return true;
+        });
+      }
+      setRestaurants(list);
+    } catch (e: any) {
+      setError(
+        e?.response?.data?.error || "Couldn't fetch restaurants. Try again."
+      );
     } finally {
       setLoadingStep(null);
     }
@@ -218,11 +256,9 @@ export default function PlanTrip() {
   const openAttractionDetails = async (a: Attraction) => {
     setDetailsOpen(true);
     setDetailsLoading(true);
-    // show the name immediately so the header isn't blank
-    setDetailsData({ name: a.name });
-
+    setDetailsData(null);
     try {
-      const { data } = await axios.post("http://localhost:3001/query", {
+      const { data } = await axios.post(`${API}/query`, {
         kind: "attraction_details",
         trip: tripDetails,
         attraction: {
@@ -230,13 +266,9 @@ export default function PlanTrip() {
           location: a.location || tripDetails.destination,
         },
       });
-
-      // backend returns { json: { name, summary, ... } }
-      const json = data?.json;
-      if (!json || typeof json !== "object") throw new Error("No JSON");
-      setDetailsData(json);
-    } catch (e) {
-      console.error("Details fetch error:", e);
+      const json = parseJSONEnvelope(data);
+      setDetailsData(json || { name: a.name, summary: "No details." });
+    } catch {
       setDetailsData({
         name: a.name,
         summary: "Sorry—couldn’t fetch details right now.",
@@ -247,9 +279,7 @@ export default function PlanTrip() {
   };
 
   /* ---------- Planner ---------- */
-
   const addToPlanner = (item: ItemType) => {
-    // avoid collisions across steps: de-dupe by (type + name)
     const exists = planner.some(
       (p) => p.type === item.type && p.name === item.name
     );
@@ -273,6 +303,7 @@ export default function PlanTrip() {
       days: 0,
       nights: 0,
       budget: "",
+      dates: "",
     });
   };
 
@@ -291,7 +322,6 @@ export default function PlanTrip() {
   };
 
   /* ---------- UI ---------- */
-
   const Stepper = () => (
     <ul className="pt-stepper">
       {steps.map((label, index) => (
@@ -317,12 +347,9 @@ export default function PlanTrip() {
     if (step === 0) {
       await fetchHotels();
       setStep(1);
-      return;
-    }
-    if (step === 1) {
+    } else if (step === 1) {
       await fetchRestaurants();
       setStep(2);
-      return;
     }
   };
 
@@ -426,6 +453,17 @@ export default function PlanTrip() {
                       <option>Luxury</option>
                     </select>
                   </div>
+                  <div className="pt-field span-2">
+                    <label>Dates (optional)</label>
+                    <input
+                      type="text"
+                      name="dates"
+                      placeholder="e.g., 2025-12-12 to 2025-12-15"
+                      className="form-control"
+                      value={tripDetails.dates}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
                 <button
                   type="submit"
@@ -447,7 +485,7 @@ export default function PlanTrip() {
                 <Stepper />
               </div>
 
-              {/* ---------- Step 0: Attractions ---------- */}
+              {/* Step 0: Attractions */}
               {step === 0 && (
                 <div className="pt-card">
                   <div
@@ -476,7 +514,6 @@ export default function PlanTrip() {
                     )}
                     {attractions.map((a, i) => (
                       <div className="pt-result-card" key={`${a.name}-${i}`}>
-                        {/* Header */}
                         <div className="pt-card-header-row">
                           <div className="pt-result-title">{a.name}</div>
                           <div className="pt-header-right">
@@ -487,7 +524,6 @@ export default function PlanTrip() {
                                     ? "pt-chip--important"
                                     : "pt-chip--optional"
                                 }`}
-                                title={a.importance}
                               >
                                 {a.importance}
                               </span>
@@ -501,7 +537,6 @@ export default function PlanTrip() {
                           </div>
                         </div>
 
-                        {/* Sub + description */}
                         {a.location && (
                           <div className="pt-result-sub">📍 {a.location}</div>
                         )}
@@ -509,7 +544,6 @@ export default function PlanTrip() {
                           <p className="pt-description">{a.description}</p>
                         )}
 
-                        {/* Collapsible meta */}
                         {(a.entry_fees || a.operation_duration) && (
                           <details className="pt-details">
                             <summary>Details (hours & fees)</summary>
@@ -547,7 +581,6 @@ export default function PlanTrip() {
                           </details>
                         )}
 
-                        {/* Divider + footer button (keeps button visually "inside") */}
                         <div className="pt-card-divider" />
                         <div className="pt-card-footer">
                           <button
@@ -571,7 +604,7 @@ export default function PlanTrip() {
                 </div>
               )}
 
-              {/* ---------- Step 1: Hotels ---------- */}
+              {/* Step 1: Hotels */}
               {step === 1 && (
                 <div className="pt-card">
                   <div
@@ -598,7 +631,6 @@ export default function PlanTrip() {
                     )}
                     {hotels.map((h, i) => (
                       <div className="pt-result-card" key={`${h.name}-${i}`}>
-                        {/* Header row: name + badges */}
                         <div className="pt-card-header-row">
                           <div className="pt-result-title">{h.name}</div>
                           <div className="pt-header-right">
@@ -615,12 +647,14 @@ export default function PlanTrip() {
                           </div>
                         </div>
 
-                        {/* Sub line */}
-                        {h.location && (
-                          <div className="pt-result-sub">📍 {h.location}</div>
-                        )}
+                        <div className="pt-result-sub">
+                          {h.location ? `📍 ${h.location}` : ""}
+                          {h.location && h.approx_cost_per_night ? " · " : ""}
+                          {h.approx_cost_per_night
+                            ? `💰 ${h.approx_cost_per_night}`
+                            : ""}
+                        </div>
 
-                        {/* Pros / Cons */}
                         {h.pros_and_cons &&
                         (h.pros_and_cons.pros?.length ||
                           h.pros_and_cons.cons?.length) ? (
@@ -651,7 +685,6 @@ export default function PlanTrip() {
                           </details>
                         ) : null}
 
-                        {/* Add */}
                         <div className="pt-card-divider" />
                         <div className="pt-card-footer">
                           <button
@@ -667,6 +700,7 @@ export default function PlanTrip() {
                                     ? `⭐ ${h.rating}`
                                     : "",
                                   h.priceRange || "",
+                                  h.approx_cost_per_night || "",
                                 ]
                                   .filter(Boolean)
                                   .join(" · "),
@@ -682,7 +716,7 @@ export default function PlanTrip() {
                 </div>
               )}
 
-              {/* ---------- Step 2: Restaurants ---------- */}
+              {/* Step 2: Restaurants */}
               {step === 2 && (
                 <div className="pt-card">
                   <div
@@ -709,7 +743,6 @@ export default function PlanTrip() {
                     )}
                     {restaurants.map((r, i) => (
                       <div className="pt-result-card" key={`${r.name}-${i}`}>
-                        {/* Header row */}
                         <div className="pt-card-header-row">
                           <div className="pt-result-title">{r.name}</div>
                           <div className="pt-header-right">
@@ -726,14 +759,16 @@ export default function PlanTrip() {
                           </div>
                         </div>
 
-                        {/* Sub lines */}
                         <div className="pt-result-sub">
                           {r.cuisineType ? `${r.cuisineType}` : ""}
                           {r.cuisineType && r.location ? " · " : ""}
                           {r.location ? `📍 ${r.location}` : ""}
+                          {r.location && r.approx_cost_for_two ? " · " : ""}
+                          {r.approx_cost_for_two
+                            ? `💰 ${r.approx_cost_for_two}`
+                            : ""}
                         </div>
 
-                        {/* Pros / Cons */}
                         {r.pros_and_cons &&
                         (r.pros_and_cons.pros?.length ||
                           r.pros_and_cons.cons?.length) ? (
@@ -764,7 +799,6 @@ export default function PlanTrip() {
                           </details>
                         ) : null}
 
-                        {/* Add */}
                         <div className="pt-card-divider" />
                         <div className="pt-card-footer">
                           <button
@@ -775,7 +809,11 @@ export default function PlanTrip() {
                                 type: "Restaurant",
                                 name: r.name,
                                 location: r.location || tripDetails.destination,
-                                description: [r.cuisineType, r.priceRange]
+                                description: [
+                                  r.cuisineType,
+                                  r.priceRange,
+                                  r.approx_cost_for_two,
+                                ]
                                   .filter(Boolean)
                                   .join(" · "),
                               })
@@ -856,6 +894,13 @@ export default function PlanTrip() {
                         </span>
                       </span>
                     </div>
+                    {tripDetails.dates && (
+                      <div className="td-row">
+                        <span className="td-icon">📅</span>
+                        <span className="td-label">Dates</span>
+                        <span className="td-value">{tripDetails.dates}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="td-actions">
@@ -913,15 +958,17 @@ export default function PlanTrip() {
 
               {/* Save itinerary */}
               {planner.length > 0 && !showSave && (
-                <button
-                  className="btn-save-itinerary"
-                  onClick={() => {
-                    setItineraryName(makeSmartName());
-                    setShowSave(true);
-                  }}
-                >
-                  💾 Save Itinerary
-                </button>
+                <div className="pt-save-cta">
+                  <button
+                    className="btn-save-itinerary"
+                    onClick={() => {
+                      setItineraryName(makeSmartName());
+                      setShowSave(true);
+                    }}
+                  >
+                    💾 Save Itinerary
+                  </button>
+                </div>
               )}
 
               {planner.length > 0 && showSave && (
@@ -942,7 +989,6 @@ export default function PlanTrip() {
                     >
                       💾 Save
                     </button>
-
                     <button
                       className="btn-cancel-ghost"
                       onClick={() => setShowSave(false)}

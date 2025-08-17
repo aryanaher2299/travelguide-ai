@@ -327,3 +327,162 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.myit-main {
+  gap: 10px;
+}
+.myit-left {
+  flex-direction: column;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: calc(100vh - 72px);
+}
+.myit-right {
+  overflow-y: auto;
+  max-height: calc(100vh - 72px);
+}
+
+.myit-head {
+  color: #fff;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.myit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.myit-list-item {
+  text-align: left;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+}
+.myit-list-item.is-active {
+  border-color: var(--primary-blue);
+  background: rgba(96, 220, 248, 0.06);
+}
+.myit-list-title {
+  font-weight: 800;
+}
+.myit-list-sub {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.myit-hint,
+.myit-empty,
+.myit-error {
+  color: #fff;
+  opacity: 0.9;
+}
+
+.myit-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.myit-card {
+  background: var(--bg-sidebar);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+}
+.myit-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  color: #fff;
+}
+.myit-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 8px 0 10px;
+}
+
+.myit-actions {
+  display: flex;
+  gap: 8px;
+}
+.myit-title {
+  font-weight: 800;
+  color: #fff;
+}
+
+.myit-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 800px) {
+  .myit-meta {
+    grid-template-columns: 1fr;
+  }
+}
+.myit-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+}
+.myit-k {
+  color: rgba(255, 255, 255, 0.8);
+}
+.myit-v {
+  color: #fff;
+  font-weight: 600;
+}
+
+.myit-day {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.myit-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.myit-day-title {
+  font-weight: 800;
+  color: #fff;
+}
+.myit-day-date {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.myit-slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.myit-slot {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px;
+}
+.myit-time {
+  font-weight: 800;
+  color: var(--primary-blue);
+}
+.myit-slot-title {
+  font-weight: 700;
+  color: #fff;
+}
+.myit-slot-notes {
+  color: rgba(255, 255, 255, 0.9);
+}
