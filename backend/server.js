@@ -6,7 +6,7 @@ import queryRoutes from "./routes/query.routes.js";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 dotenv.config();
 
