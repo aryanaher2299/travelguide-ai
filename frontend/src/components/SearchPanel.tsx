@@ -1,6 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 
+// Use the same env var as the rest of the app
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 type OutputType = {
   attractions?: {
     name: string;
@@ -41,10 +44,11 @@ export default function SearchPanel() {
   const [hotelOutput, setHotelOutput] = useState<OutputType>(null);
   const [loading, setLoading] = useState(false);
 
+  // Backend usually returns { json: <object> }. If a string ever comes back, parse it safely.
   const parseJsonSafe = (s: string) => {
     try {
       const clean = s
-        .replace(/```json/g, "")
+        .replace(/```json/gi, "")
         .replace(/```/g, "")
         .trim();
       return JSON.parse(clean);
@@ -53,15 +57,23 @@ export default function SearchPanel() {
       return { text: "Something went wrong parsing AI output." };
     }
   };
+  const unwrap = (data: any): OutputType => {
+    if (!data) return { text: "Empty response." };
+    // Prefer { json: ... } if present
+    if (data.json && typeof data.json === "object") return data.json;
+    if (typeof data.json === "string") return parseJsonSafe(data.json);
+    if (typeof data.response === "string") return parseJsonSafe(data.response);
+    if (typeof data === "string") return parseJsonSafe(data);
+    if (typeof data === "object") return data as OutputType;
+    return { text: "Unexpected response shape." };
+  };
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:3001/query", {
-        prompt: query,
-      });
-      setSearchOutput(parseJsonSafe(res.data.response));
+      const res = await axios.post(`${API}/query`, { prompt: query });
+      setSearchOutput(unwrap(res.data));
     } catch (err) {
       console.error("Search Error:", err);
       setSearchOutput({ text: "Something went wrong." });
@@ -78,10 +90,8 @@ export default function SearchPanel() {
         const { latitude, longitude } = pos.coords;
         const prompt = `Find top food places nearby latitude ${latitude}, longitude ${longitude}`;
         try {
-          const res = await axios.post("http://localhost:3001/query", {
-            prompt,
-          });
-          setFoodOutput(parseJsonSafe(res.data.response));
+          const res = await axios.post(`${API}/query`, { prompt });
+          setFoodOutput(unwrap(res.data));
         } catch (err) {
           console.error("Food Nearby Error:", err);
           setFoodOutput({ text: "Error fetching food places." });
@@ -104,10 +114,8 @@ export default function SearchPanel() {
         const { latitude, longitude } = pos.coords;
         const prompt = `Find top hotels nearby latitude ${latitude}, longitude ${longitude}`;
         try {
-          const res = await axios.post("http://localhost:3001/query", {
-            prompt,
-          });
-          setHotelOutput(parseJsonSafe(res.data.response));
+          const res = await axios.post(`${API}/query`, { prompt });
+          setHotelOutput(unwrap(res.data));
         } catch (err) {
           console.error("Hotels Nearby Error:", err);
           setHotelOutput({ text: "Error fetching hotels." });
