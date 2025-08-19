@@ -1,41 +1,116 @@
 import { useState } from "react";
 import axios from "axios";
 
-// Use the same env var as the rest of the app
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
 type OutputType = {
   attractions?: {
     name: string;
-    description: string;
-    location: string;
+    description?: string;
+    location?: string;
     importance?: string;
-    entryFees?: string;
-    operationDuration?: string;
+    entry_fees?: Record<string, string> | string; // accept both
+    entryFees?: string; // legacy
+    operation_duration?: string;
+    operationDuration?: string; // legacy
   }[];
   hotels?: {
     name: string;
-    rating: string | number;
-    priceRange: string;
-    location: string;
-    pros?: string;
-    cons?: string;
+    rating?: string | number;
+    priceRange?: string;
+    approx_cost_per_night?: string;
+    location?: string;
+    pros_and_cons?: { pros?: string[]; cons?: string[] };
+    pros?: string; // legacy
+    cons?: string; // legacy
   }[];
   food?: {
     name: string;
-    cuisineType: string;
-    rating: string | number;
-    priceRange: string;
-    location: string;
-    pros?: string;
-    cons?: string;
+    cuisineType?: string;
+    rating?: string | number;
+    priceRange?: string;
+    approx_cost_for_two?: string;
+    location?: string;
+    pros_and_cons?: { pros?: string[]; cons?: string[] };
+    pros?: string; // legacy
+    cons?: string; // legacy
   }[];
-  scams?: {
-    title: string;
-    description: string;
-  }[];
+  scams?: { title: string; description: string }[];
   text?: string;
 } | null;
+
+// Use env var (Vercel: set VITE_API_BASE_URL) or fallback for local dev
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+
+/** ---- helpers ---- */
+
+// Accept either a JS object (new backend `json`) or a string to parse (legacy `response`)
+function parseSafeJsonEnvelope(resData: any): OutputType {
+  // New shape: { json: {...} }
+  if (resData?.json && typeof resData.json === "object") {
+    return resData.json;
+  }
+  // Legacy shape: { response: " ...json... " }
+  const raw = resData?.response;
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const clean = raw
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+      return JSON.parse(clean);
+    } catch {
+      // try to extract largest {...}
+      const start = raw.indexOf("{");
+      const end = raw.lastIndexOf("}");
+      if (start !== -1 && end > start) {
+        try {
+          return JSON.parse(raw.slice(start, end + 1));
+        } catch {
+          return { text: "Could not parse AI output." };
+        }
+      }
+      return { text: "Could not parse AI output." };
+    }
+  }
+  return { text: "No data received." };
+}
+
+const Section: React.FC<{ title: string; children?: React.ReactNode }> = ({
+  title,
+  children,
+}) => (
+  <div className="card-dark mb-3">
+    <h6 className="card-title">{title}</h6>
+    <div className="card-divider" />
+    {children}
+  </div>
+);
+
+const Chip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span
+    style={{
+      display: "inline-block",
+      padding: "0.18rem 0.5rem",
+      borderRadius: "999px",
+      fontSize: ".75rem",
+      lineHeight: 1,
+      border: "1px solid rgba(255,255,255,.16)",
+      color: "#cfefff",
+      background: "rgba(96,220,248,.10)",
+      marginRight: 6,
+    }}
+  >
+    {children}
+  </span>
+);
+
+const hasContent = (data: OutputType) =>
+  !!(
+    data?.text ||
+    (data?.food && data.food.length) ||
+    (data?.hotels && data.hotels.length) ||
+    (data?.attractions && data.attractions.length) ||
+    (data?.scams && data.scams.length)
+  );
 
 export default function SearchPanel() {
   const [query, setQuery] = useState("");
@@ -44,36 +119,14 @@ export default function SearchPanel() {
   const [hotelOutput, setHotelOutput] = useState<OutputType>(null);
   const [loading, setLoading] = useState(false);
 
-  // Backend usually returns { json: <object> }. If a string ever comes back, parse it safely.
-  const parseJsonSafe = (s: string) => {
-    try {
-      const clean = s
-        .replace(/```json/gi, "")
-        .replace(/```/g, "")
-        .trim();
-      return JSON.parse(clean);
-    } catch (e) {
-      console.error("JSON parse failed", e);
-      return { text: "Something went wrong parsing AI output." };
-    }
-  };
-  const unwrap = (data: any): OutputType => {
-    if (!data) return { text: "Empty response." };
-    // Prefer { json: ... } if present
-    if (data.json && typeof data.json === "object") return data.json;
-    if (typeof data.json === "string") return parseJsonSafe(data.json);
-    if (typeof data.response === "string") return parseJsonSafe(data.response);
-    if (typeof data === "string") return parseJsonSafe(data);
-    if (typeof data === "object") return data as OutputType;
-    return { text: "Unexpected response shape." };
-  };
+  // --- calls ---
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const res = await axios.post(`${API}/query`, { prompt: query });
-      setSearchOutput(unwrap(res.data));
+      const { data } = await axios.post(`${API}/query`, { prompt: query });
+      setSearchOutput(parseSafeJsonEnvelope(data));
     } catch (err) {
       console.error("Search Error:", err);
       setSearchOutput({ text: "Something went wrong." });
@@ -83,15 +136,18 @@ export default function SearchPanel() {
   };
 
   const handleFoodNearby = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setFoodOutput({ text: "Geolocation not available in this browser." });
+      return;
+    }
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
-        const prompt = `Find top food places nearby latitude ${latitude}, longitude ${longitude}`;
+        const prompt = `Return JSON with a "food" array of specific restaurants near latitude ${latitude}, longitude ${longitude} (max 8). Include name, cuisineType, rating, priceRange, approx_cost_for_two, location, and pros_and_cons with brief pros/cons.`;
         try {
-          const res = await axios.post(`${API}/query`, { prompt });
-          setFoodOutput(unwrap(res.data));
+          const { data } = await axios.post(`${API}/query`, { prompt });
+          setFoodOutput(parseSafeJsonEnvelope(data));
         } catch (err) {
           console.error("Food Nearby Error:", err);
           setFoodOutput({ text: "Error fetching food places." });
@@ -102,20 +158,24 @@ export default function SearchPanel() {
       (err) => {
         console.error("Geolocation error:", err);
         setLoading(false);
+        setFoodOutput({ text: "Permission denied for location." });
       }
     );
   };
 
   const handleHotelsNearby = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setHotelOutput({ text: "Geolocation not available in this browser." });
+      return;
+    }
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
-        const prompt = `Find top hotels nearby latitude ${latitude}, longitude ${longitude}`;
+        const prompt = `Return JSON with a "hotels" array of specific hotels near latitude ${latitude}, longitude ${longitude} (max 8). Include name, rating, priceRange, approx_cost_per_night, location, and pros_and_cons with brief pros/cons.`;
         try {
-          const res = await axios.post(`${API}/query`, { prompt });
-          setHotelOutput(unwrap(res.data));
+          const { data } = await axios.post(`${API}/query`, { prompt });
+          setHotelOutput(parseSafeJsonEnvelope(data));
         } catch (err) {
           console.error("Hotels Nearby Error:", err);
           setHotelOutput({ text: "Error fetching hotels." });
@@ -126,48 +186,12 @@ export default function SearchPanel() {
       (err) => {
         console.error("Geolocation error:", err);
         setLoading(false);
+        setHotelOutput({ text: "Permission denied for location." });
       }
     );
   };
 
-  // --- UI helpers ---
-  const Section: React.FC<{ title: string; children?: React.ReactNode }> = ({
-    title,
-    children,
-  }) => (
-    <div className="card-dark mb-3">
-      <h6 className="card-title">{title}</h6>
-      <div className="card-divider" />
-      {children}
-    </div>
-  );
-
-  const Chip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <span
-      style={{
-        display: "inline-block",
-        padding: "0.18rem 0.5rem",
-        borderRadius: "999px",
-        fontSize: ".75rem",
-        lineHeight: 1,
-        border: "1px solid rgba(255,255,255,.16)",
-        color: "#cfefff",
-        background: "rgba(96,220,248,.10)",
-        marginRight: 6,
-      }}
-    >
-      {children}
-    </span>
-  );
-
-  const hasContent = (data: OutputType) =>
-    !!(
-      data?.text ||
-      (data?.food && data.food.length) ||
-      (data?.hotels && data.hotels.length) ||
-      (data?.attractions && data.attractions.length) ||
-      (data?.scams && data.scams.length)
-    );
+  // --- render helpers ---
 
   const renderOutput = (data: OutputType) => {
     if (!hasContent(data)) return <p>No results.</p>;
@@ -192,16 +216,25 @@ export default function SearchPanel() {
                     {f.priceRange && <Chip>{f.priceRange}</Chip>}
                   </div>
                   <div className="text-muted">📍 {f.location}</div>
-                  {f.pros && (
+                  {/* pros/cons from either pros_and_cons or legacy pros/cons */}
+                  {(f as any).pros_and_cons?.pros?.length ? (
                     <div style={{ marginTop: 6 }}>
-                      <Chip>✅ {f.pros}</Chip>
+                      <Chip>✅ {(f as any).pros_and_cons.pros[0]}</Chip>
                     </div>
-                  )}
-                  {f.cons && (
+                  ) : (f as any).pros ? (
                     <div style={{ marginTop: 6 }}>
-                      <Chip>⚠️ {f.cons}</Chip>
+                      <Chip>✅ {(f as any).pros}</Chip>
                     </div>
-                  )}
+                  ) : null}
+                  {(f as any).pros_and_cons?.cons?.length ? (
+                    <div style={{ marginTop: 6 }}>
+                      <Chip>⚠️ {(f as any).pros_and_cons.cons[0]}</Chip>
+                    </div>
+                  ) : (f as any).cons ? (
+                    <div style={{ marginTop: 6 }}>
+                      <Chip>⚠️ {(f as any).cons}</Chip>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -225,16 +258,30 @@ export default function SearchPanel() {
                     {h.priceRange && <Chip>{h.priceRange}</Chip>}
                   </div>
                   <div className="text-muted">📍 {h.location}</div>
-                  {h.pros && (
+                  {/* price/night if present */}
+                  {(h as any).approx_cost_per_night && (
                     <div style={{ marginTop: 6 }}>
-                      <Chip>✅ {h.pros}</Chip>
+                      <Chip>💰 {(h as any).approx_cost_per_night}</Chip>
                     </div>
                   )}
-                  {h.cons && (
+                  {(h as any).pros_and_cons?.pros?.length ? (
                     <div style={{ marginTop: 6 }}>
-                      <Chip>⚠️ {h.cons}</Chip>
+                      <Chip>✅ {(h as any).pros_and_cons.pros[0]}</Chip>
                     </div>
-                  )}
+                  ) : (h as any).pros ? (
+                    <div style={{ marginTop: 6 }}>
+                      <Chip>✅ {(h as any).pros}</Chip>
+                    </div>
+                  ) : null}
+                  {(h as any).pros_and_cons?.cons?.length ? (
+                    <div style={{ marginTop: 6 }}>
+                      <Chip>⚠️ {(h as any).pros_and_cons.cons[0]}</Chip>
+                    </div>
+                  ) : (h as any).cons ? (
+                    <div style={{ marginTop: 6 }}>
+                      <Chip>⚠️ {(h as any).cons}</Chip>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -245,25 +292,40 @@ export default function SearchPanel() {
         {data?.attractions && data.attractions.length > 0 && (
           <Section title="🏞 Attractions">
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {data.attractions.map((a, i) => (
-                <li
-                  key={i}
-                  style={{
-                    padding: ".5rem 0",
-                    borderTop: i ? "1px dashed rgba(255,255,255,.08)" : "none",
-                  }}
-                >
-                  <div style={{ fontWeight: 600 }}>
-                    {a.name} {a.importance && <Chip>{a.importance}</Chip>}
-                  </div>
-                  <div className="text-muted">📍 {a.location}</div>
-                  {a.entryFees && <Chip>💵 {a.entryFees}</Chip>}
-                  {a.operationDuration && <Chip>⏱ {a.operationDuration}</Chip>}
-                  {a.description && (
-                    <div style={{ marginTop: 6 }}>{a.description}</div>
-                  )}
-                </li>
-              ))}
+              {data.attractions.map((a, i) => {
+                const fees =
+                  typeof a.entry_fees === "string"
+                    ? a.entry_fees
+                    : a.entryFees
+                    ? a.entryFees
+                    : a.entry_fees
+                    ? Object.entries(a.entry_fees)
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(" · ")
+                    : "";
+                const hours = a.operation_duration || a.operationDuration || "";
+                return (
+                  <li
+                    key={i}
+                    style={{
+                      padding: ".5rem 0",
+                      borderTop: i
+                        ? "1px dashed rgba(255,255,255,.08)"
+                        : "none",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>
+                      {a.name} {a.importance && <Chip>{a.importance}</Chip>}
+                    </div>
+                    <div className="text-muted">📍 {a.location}</div>
+                    {fees && <Chip>💵 {fees}</Chip>}
+                    {hours && <Chip>⏱ {hours}</Chip>}
+                    {a.description && (
+                      <div style={{ marginTop: 6 }}>{a.description}</div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </Section>
         )}
