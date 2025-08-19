@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "backend": "nodemon -r dotenv/config backend/server.js",
-    "frontend": "cd frontend && vite",
-    "dev": "concurrently \"npm run backend\" \"npm run frontend\""
-  },
+  "backend": "npm --prefix backend run dev",
+  "frontend": "npm --prefix frontend run dev",
+  "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\""
+},
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@react-google-maps/api": "^2.20.7",

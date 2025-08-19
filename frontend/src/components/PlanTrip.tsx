@@ -71,7 +71,7 @@ type AttractionDetails = {
 /* ---------- helpers ---------- */
 const parseJSONEnvelope = (raw: any) => (raw?.json ? raw.json : null);
 
-const API = "http://localhost:3001";
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 /* ---------- Component ---------- */
 export default function PlanTrip() {
