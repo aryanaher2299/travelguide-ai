@@ -1,463 +1,241 @@
-.itinerary-left {
-  display: flex;
-  flex-direction: column;
+/* ---- Layout ---- */
+.myit-main {
+  display: grid;
+  grid-template-columns: 420px 1fr;
   gap: 12px;
 }
-.itinerary-right {
-  padding: 0;
-}
-
-/* Card */
-.mi-card {
-  background: var(--bg-sidebar);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
-}
-.mi-card-head {
-  color: var(--accent-pink);
-  font-size: 1rem;
-  font-weight: 700;
-}
-.mi-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-  margin: 8px 0 10px;
-}
-
-/* Scroll container */
-.mi-scroll {
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-.mi-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-.mi-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-}
-
-/* Itinerary card */
-.mi-itinerary-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
-.mi-itinerary-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  cursor: pointer;
-}
-.mi-itinerary-title {
-  color: #ffffff;
-  font-weight: 700;
-}
-.mi-itinerary-sub {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
-}
-.mi-expand-icon {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* Expanded body */
-.mi-itinerary-body {
-  padding: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-.mi-item {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 8px;
-  margin-bottom: 8px;
-}
-.mi-item-title {
-  color: #ffffff;
-  font-weight: 600;
-}
-.mi-item-sub {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
-}
-.mi-item-desc {
-  color: #ffffff;
-  font-size: 0.85rem;
-  margin-top: 4px;
-}
-
-/* Actions */
-.mi-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-
-/* Day/Night grid */
-.mi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-.mi-day {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 10px;
-}
-.mi-day-head {
-  color: var(--accent-pink);
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-.mi-slot {
-  margin-bottom: 8px;
-}
-.mi-slot-title {
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.75);
-  margin-bottom: 4px;
-}
-.mi-empty {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  padding: 8px;
-  border-radius: 8px;
-}
-
-.mi-overflow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.mi-overflow-chip {
-  font-size: 0.8rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-}
-
-/* reuse your earlier classes:
-   .mi-itinerary-card, .mi-itinerary-header, .mi-itinerary-body, .mi-item, .mi-item-title, .mi-item-sub, .mi-item-desc, .mi-actions
-*/
-/* LEFT: compact list with highlight */
-.itinerary-left {
-  padding: 0;
-}
-.mi-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-.mi-list-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 10px;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.mi-list-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-.mi-list-card.active {
-  border-color: var(--primary-blue);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-}
-.mi-list-title {
-  color: #fff;
-  font-weight: 700;
-}
-.mi-list-sub {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.85rem;
-}
-
-/* RIGHT: scrollable details */
-.itinerary-right {
-  overflow-y: auto;
-  max-height: calc(100vh - 120px);
-}
-
-/* Reuse Trip Details polish from plan page */
-.td-route {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-}
-.td-city {
-  color: #fff;
-  font-weight: 700;
-}
-.td-arrow {
-  opacity: 0.8;
-}
-
-.td-meta {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-.td-row {
-  display: grid;
-  grid-template-columns: 24px 90px 1fr;
-  gap: 8px;
-  align-items: center;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-}
-.td-icon {
-  text-align: center;
-}
-.td-label {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.9rem;
-}
-.td-value {
-  color: #fff;
-  font-weight: 600;
-}
-.td-badge {
-  display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-.td-badge--budget {
-  border-color: var(--secondary-purple);
-  color: var(--secondary-purple);
-}
-
-@media (min-width: 860px) {
-  .td-meta {
-    grid-template-columns: 1fr 1fr;
+@media (max-width: 1040px) {
+  .myit-main {
+    grid-template-columns: 1fr;
   }
 }
 
-/* Day/Night grid (already in your file; included for completeness)
-.mi-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
-.mi-day { background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:10px; }
-.mi-day-head { color: var(--accent-pink); font-weight:700; margin-bottom:6px; }
-.mi-slot { margin-bottom:8px; }
-.mi-slot-title { font-size:.82rem; color: rgba(255,255,255,.75); margin-bottom:4px; }
-.mi-item { background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:8px; }
-.mi-item-title { color:#fff; font-weight:600; }
-.mi-item-sub { color: rgba(255,255,255,.7); font-size:.85rem; }
-.mi-item-desc { color:#fff; font-size:.85rem; margin-top:4px; }
-.mi-empty { font-size:.85rem; color: rgba(255,255,255,.5); border:1px dashed rgba(255,255,255,.15); padding:8px; border-radius:8px; }
-.mi-actions { display:flex; justify-content:space-between; margin-top:10px; }
-*/
-
-/* Make outline-danger fit dark theme */
-.btn-outline-danger {
-  color: #ff4d4f !important; /* your danger red */
-  border-color: #ff4d4f !important;
-  background-color: transparent !important;
-}
-
-.btn-outline-danger:hover,
-.btn-outline-danger:focus {
-  background-color: rgba(255, 77, 79, 0.15) !important;
-  color: #ff4d4f !important;
-  border-color: #ff4d4f !important;
-}
-
-/* Clickable empty slot */
-.mi-empty-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.25);
-  color: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  padding: 10px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease,
-    transform 0.1s ease;
-}
-.mi-empty-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-/* Inline suggestion panel inside a slot */
-.mi-suggest-inline {
-  margin-top: 8px;
-  padding: 8px;
+/* Panels */
+.panel {
+  background: var(--bg-main, #0b1020);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
 }
-.mi-suggest-item {
+.panel-left {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  margin-bottom: 6px;
-}
-.mi-suggest-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.myit-main {
-  gap: 10px;
-}
-.myit-left {
   flex-direction: column;
-  padding: 12px;
-  overflow-y: auto;
-  max-height: calc(100vh - 72px);
+  overflow: hidden;
 }
-.myit-right {
-  overflow-y: auto;
+.panel-right {
+  padding: 12px;
   max-height: calc(100vh - 72px);
+  overflow-y: auto;
 }
 
-.myit-head {
+/* Left head */
+.panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-main, #0b1020);
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.panel-title {
   color: #fff;
   font-weight: 800;
   margin-bottom: 8px;
 }
-.myit-list {
-  display: flex;
-  flex-direction: column;
+.panel-tools {
+  display: grid;
+  grid-template-columns: 120px 1fr;
   gap: 8px;
 }
-.myit-list-item {
-  text-align: left;
+.tool-select,
+.tool-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.tool-input::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Grid of small cards */
+.cards-grid {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+@media (max-width: 640px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mini card */
+.mini-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 10px;
+  overflow: hidden;
   cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
-.myit-list-item.is-active {
-  border-color: var(--primary-blue);
-  background: rgba(96, 220, 248, 0.06);
+.mini-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
-.myit-list-title {
-  font-weight: 800;
-}
-.myit-list-sub {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
+.mini-card.is-active {
+  border-color: var(--primary-blue, #60dcf8);
+  box-shadow: 0 0 0 2px var(--primary-blue, #60dcf8) inset;
 }
 
-.myit-hint,
-.myit-empty,
-.myit-error {
+.mini-img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+.mini-body {
+  padding: 10px;
+}
+.mini-title {
   color: #fff;
-  opacity: 0.9;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+.mini-sub {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
 }
 
-.myit-detail {
+.mini-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Small pills/tags */
+.pill {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+}
+.pill-n {
+  border-color: rgba(168, 139, 255, 0.35);
+  color: #a88bff;
+  background: rgba(168, 139, 255, 0.15);
+}
+.pill-p {
+  border-color: rgba(96, 220, 248, 0.35);
+  color: #60dcf8;
+  background: rgba(96, 220, 248, 0.15);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.18rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cfe6ff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.tag-a {
+  color: #4cc9f0;
+  border-color: #4cc9f0;
+}
+.tag-h {
+  color: #ffd166;
+  border-color: #ffd166;
+}
+.tag-r {
+  color: #ef476f;
+  border-color: #ef476f;
+}
+
+/* Right side (unchanged, slim) */
+.stack {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.myit-card {
-  background: var(--bg-sidebar);
-  color: #fff;
+.card {
+  background: var(--bg-sidebar, #0f1530);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 12px;
+  color: #fff;
 }
-.myit-card-head {
+.card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 800;
-  color: #fff;
 }
-.myit-divider {
+.card-title {
+  font-weight: 800;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.08);
   margin: 8px 0 10px;
 }
-
-.myit-actions {
-  display: flex;
-  gap: 8px;
-}
-.myit-title {
-  font-weight: 800;
-  color: #fff;
-}
-
-.myit-meta {
+.meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 @media (max-width: 800px) {
-  .myit-meta {
+  .meta {
     grid-template-columns: 1fr;
   }
 }
-.myit-row {
+.meta-row {
   display: grid;
   grid-template-columns: 120px 1fr;
   gap: 8px;
 }
-.myit-k {
+.k {
   color: rgba(255, 255, 255, 0.8);
 }
-.myit-v {
+.v {
   color: #fff;
   font-weight: 600;
 }
 
-.myit-day {
+.day {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 10px;
   margin-bottom: 10px;
 }
-.myit-day-head {
+.day-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
-.myit-day-title {
+.day-title {
   font-weight: 800;
-  color: #fff;
 }
-.myit-day-date {
+.day-date {
   color: rgba(255, 255, 255, 0.85);
 }
-
-.myit-slots {
+.slots {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -465,7 +243,7 @@
   flex-direction: column;
   gap: 8px;
 }
-.myit-slot {
+.slot {
   display: grid;
   grid-template-columns: 70px 1fr;
   gap: 10px;
@@ -475,14 +253,105 @@
   border-radius: 10px;
   padding: 8px;
 }
-.myit-time {
+.time {
   font-weight: 800;
-  color: var(--primary-blue);
+  color: var(--primary-blue, #60dcf8);
 }
-.myit-slot-title {
+.slot-title {
   font-weight: 700;
+}
+.slot-notes {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Buttons */
+.btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.btn-outline {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.btn-danger {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+.btn-danger:hover {
+  background: rgba(255, 77, 79, 0.15);
+}
+
+/* Text */
+.muted {
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* Top row in each slot: title left, type tag right */
+.slot-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Type tag styles */
+.type-tag {
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #cfe6ff;
+  background: rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.type-attraction {
+  border-color: #4cc9f0;
+  color: #4cc9f0;
+}
+.type-hotel {
+  border-color: #ffd166;
+  color: #ffd166;
+}
+.type-restaurant {
+  border-color: #ef476f;
+  color: #ef476f;
+}
+
+/* right-side slot header with cost + type */
+.slot-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.suggest-line {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.suggest-chip {
+  font-size: 0.8rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
-.myit-slot-notes {
-  color: rgba(255, 255, 255, 0.9);
+.suggest-chip--btn {
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.15s ease,
+    border-color 0.15s ease;
+}
+.suggest-chip--btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
 }

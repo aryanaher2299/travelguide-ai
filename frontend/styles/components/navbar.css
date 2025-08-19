@@ -20,3 +20,16 @@
 .navbar a:hover {
   color: #9be9fb !important;
 }
+
+/* Push links to the right and keep them aligned */
+.nav-links {
+  margin-left: auto; /* <-- key: sends this group to the right edge */
+  display: flex;
+  align-items: center;
+  gap: 24px; /* spacing between links (works alongside .me-4) */
+}
+
+/* Optional tiny visual polish (no layout change) */
+.navbar-brand img {
+  display: block;
+}
